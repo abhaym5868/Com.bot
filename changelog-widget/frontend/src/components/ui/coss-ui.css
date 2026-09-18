@@ -1,0 +1,511 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Coss UI (coss.com/ui) Primitives Style System
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Button ── */
+.coss-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  text-decoration: none;
+  outline: none;
+  user-select: none;
+}
+.coss-btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-accent-ring);
+}
+.coss-btn[disabled],
+.coss-btn[data-disabled] {
+  opacity: 0.55;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Button Variants */
+.coss-btn-default {
+  background: var(--color-accent);
+  color: #ffffff;
+  border-color: var(--color-accent);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.coss-btn-default:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  box-shadow: 0 2px 6px rgba(79, 110, 247, 0.25);
+}
+
+.coss-btn-secondary {
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-xs);
+}
+.coss-btn-secondary:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-subtle);
+}
+
+.coss-btn-outline {
+  background: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+.coss-btn-outline:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-subtle);
+}
+
+.coss-btn-ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: transparent;
+}
+.coss-btn-ghost:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.coss-btn-destructive {
+  background: var(--color-danger);
+  color: #ffffff;
+  border-color: var(--color-danger);
+}
+.coss-btn-destructive:hover {
+  background: #B91C1C;
+}
+
+.coss-btn-link {
+  background: transparent;
+  color: var(--color-accent);
+  padding: 0;
+  height: auto;
+}
+.coss-btn-link:hover {
+  text-decoration: underline;
+}
+
+/* Button Sizes */
+.coss-btn-default-size {
+  height: 38px;
+  padding: 0 16px;
+}
+.coss-btn-sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 0.8125rem;
+}
+.coss-btn-lg {
+  height: 44px;
+  padding: 0 20px;
+  font-size: 0.9375rem;
+}
+.coss-btn-icon {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+}
+.coss-btn-icon-sm {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 0.8125rem;
+}
+
+/* ── Badge ── */
+.coss-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+.coss-badge-default {
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+  border-color: var(--color-accent-ring);
+}
+.coss-badge-secondary {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+.coss-badge-outline {
+  background: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+.coss-badge-success {
+  background: var(--color-success-dim);
+  color: var(--color-success);
+  border-color: var(--color-success-border);
+}
+.coss-badge-destructive {
+  background: var(--color-danger-dim);
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+}
+.coss-badge-warning {
+  background: var(--color-warning-dim);
+  color: var(--color-warning);
+  border-color: var(--color-warning-border);
+}
+
+/* ── Card ── */
+.coss-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+}
+.coss-card-header {
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.coss-card-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+.coss-card-description {
+  font-size: 0.84rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+.coss-card-content {
+  padding: 0 var(--space-6) var(--space-6);
+  flex: 1;
+}
+.coss-card-footer {
+  padding: var(--space-4) var(--space-6);
+  background: var(--color-bg-elevated);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Input & Textarea ── */
+.coss-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  outline: none;
+  transition: all var(--transition-base);
+}
+.coss-input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-ring);
+}
+.coss-input::placeholder {
+  color: var(--color-text-muted);
+}
+.coss-input[disabled] {
+  background: var(--color-bg-subtle);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.coss-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  outline: none;
+  transition: all var(--transition-base);
+  resize: vertical;
+}
+.coss-textarea:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-ring);
+}
+
+/* ── Dialog ── */
+.coss-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 2000;
+  animation: cossFadeIn 0.15s ease-out;
+}
+
+.coss-dialog-viewport {
+  position: fixed;
+  inset: 0;
+  z-index: 2001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  pointer-events: none;
+}
+
+.coss-dialog-popup {
+  pointer-events: auto;
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: cossScaleIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.coss-dialog-header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+}
+.coss-dialog-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 4px;
+}
+.coss-dialog-description {
+  font-size: 0.84rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+.coss-dialog-body {
+  padding: var(--space-6);
+  overflow-y: auto;
+}
+.coss-dialog-footer {
+  padding: var(--space-4) var(--space-6);
+  background: var(--color-bg-elevated);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+.coss-dialog-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  transition: all var(--transition-base);
+}
+.coss-dialog-close:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+/* ── Menu / Dropdown ── */
+.coss-menu-popup {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-1);
+  min-width: 220px;
+  z-index: 2500;
+  outline: none;
+  animation: cossDropdownFade 0.15s ease-out;
+}
+.coss-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  outline: none;
+  transition: all var(--transition-base);
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+.coss-menu-item:hover,
+.coss-menu-item[data-highlighted] {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+.coss-menu-item-danger {
+  color: var(--color-danger);
+}
+.coss-menu-item-danger:hover,
+.coss-menu-item-danger[data-highlighted] {
+  background: var(--color-danger-dim);
+  color: var(--color-danger);
+}
+.coss-menu-separator {
+  height: 1px;
+  background: var(--color-border);
+  margin: 4px 0;
+}
+
+/* ── Tabs ── */
+.coss-tabs-list {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-bg-subtle);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+.coss-tabs-tab {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  outline: none;
+}
+.coss-tabs-tab:hover {
+  color: var(--color-text-primary);
+}
+.coss-tabs-tab[data-selected],
+.coss-tabs-tab.active {
+  background: #ffffff;
+  color: var(--color-text-primary);
+  font-weight: 600;
+  box-shadow: var(--shadow-xs);
+}
+.coss-tabs-panel {
+  outline: none;
+  animation: cossFadeIn 0.15s ease-out;
+}
+
+/* ── Sheet / Drawer ── */
+.coss-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 2100;
+  animation: cossFadeIn 0.2s ease-out;
+}
+.coss-sheet-content {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 400px;
+  max-width: 90vw;
+  background: var(--color-bg-card);
+  border-left: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xl);
+  z-index: 2101;
+  display: flex;
+  flex-direction: column;
+  animation: cossSlideRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+.coss-sheet-header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.coss-sheet-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+.coss-sheet-description {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  margin: 2px 0 0;
+}
+.coss-sheet-body {
+  padding: var(--space-5);
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ── Kbd ── */
+.coss-kbd {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  padding: 1px 5px;
+  color: var(--color-text-muted);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Animations ── */
+@keyframes cossFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes cossScaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes cossDropdownFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes cossSlideRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}

@@ -1,0 +1,383 @@
+/* ═══════════════════════════════════════════════════════
+   MarkdownStudio.css — Premium Light Split-Pane Editor
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Container ── */
+.markdown-studio-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--header-height));
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+/* ── Studio Top Navbar ── */
+.studio-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  gap: var(--space-4);
+  flex-shrink: 0;
+  height: 56px;
+  box-shadow: 0 1px 0 var(--color-border);
+}
+
+.studio-navbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  flex: 1;
+}
+
+.studio-title-block {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.studio-badge-mode {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+  line-height: 1;
+}
+
+.studio-subtitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+/* ── View Toggle Pill ── */
+.studio-view-toggle {
+  display: flex;
+  background: var(--color-bg-subtle);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.toggle-btn {
+  padding: 5px 14px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.toggle-btn:hover:not(.active) {
+  color: var(--color-text-secondary);
+  background: var(--color-bg-hover);
+}
+.toggle-btn.active {
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-xs);
+  font-weight: 600;
+  border: 1px solid var(--color-border);
+}
+
+/* ── Action Buttons ── */
+.studio-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* ── Split Body ── */
+.studio-split-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── View mode variants ── */
+.tab-edit .studio-preview-pane    { display: none; }
+.tab-edit .studio-editor-pane     { border-right: none; }
+.tab-preview .studio-editor-pane  { display: none; }
+.tab-preview .studio-preview-pane { border-left: none; }
+
+/* ── Editor Pane ── */
+.studio-editor-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-5);
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+  gap: var(--space-4);
+  background: var(--color-bg);
+  min-width: 0;
+}
+
+/* ── Field Group ── */
+.studio-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 0;
+}
+
+.text-danger {
+  color: var(--color-danger);
+}
+
+.studio-input-title {
+  font-size: 1.0625rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em;
+  color: var(--color-text-primary);
+}
+
+.studio-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-4);
+}
+
+/* ── Markdown Toolbar ── */
+.studio-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  border-bottom: none;
+  flex-shrink: 0;
+}
+
+.tool-btn {
+  padding: 4px 9px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 28px;
+}
+.tool-btn:hover {
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-xs);
+}
+.tool-btn:active {
+  transform: scale(0.94);
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+  border-color: var(--color-accent-ring);
+}
+
+.tool-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--color-border);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* ── Textarea ── */
+.studio-textarea-wrapper {
+  flex: 1;
+  display: flex;
+  min-height: 280px;
+  position: relative;
+}
+
+.studio-markdown-textarea {
+  width: 100%;
+  flex: 1;
+  min-height: 280px;
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.8625rem;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  tab-size: 2;
+}
+.studio-markdown-textarea::placeholder {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.studio-markdown-textarea:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-ring);
+}
+
+/* ── Preview Pane ── */
+.studio-preview-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-card);
+  overflow-y: auto;
+  min-width: 0;
+  border-left: 1px solid var(--color-border);
+}
+
+.studio-preview-header {
+  padding: 10px var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-bg-elevated);
+  flex-shrink: 0;
+  min-height: 44px;
+}
+
+.studio-preview-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.indicator-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-success);
+  animation: pulse-dot 2.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+.studio-preview-content {
+  padding: var(--space-8);
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.studio-preview-cover {
+  margin-bottom: var(--space-6);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+.studio-preview-cover img {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  display: block;
+}
+
+.studio-preview-tags {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.preview-date {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.preview-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: var(--space-6);
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  color: var(--color-text-primary);
+}
+
+.preview-markdown {
+  line-height: 1.75;
+}
+
+/* ── Mobile Layout ── */
+@media (max-width: 900px) {
+  .studio-view-toggle {
+    display: none;
+  }
+  .studio-split-body {
+    flex-direction: column;
+  }
+  .tab-split .studio-preview-pane {
+    display: none;
+  }
+  .tab-split .studio-editor-pane {
+    border-right: none;
+  }
+  .studio-meta-grid {
+    grid-template-columns: 1fr;
+  }
+  .studio-subtitle {
+    display: none;
+  }
+  .studio-preview-content {
+    padding: var(--space-5) var(--space-4);
+  }
+}
+
+@media (max-width: 640px) {
+  .studio-navbar {
+    padding: 0 var(--space-4);
+    flex-wrap: wrap;
+    height: auto;
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
+    gap: var(--space-3);
+  }
+  .studio-actions {
+    order: 3;
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
