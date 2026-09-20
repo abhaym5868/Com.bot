@@ -13,6 +13,10 @@ jobs:
     defaults:
       run:
         working-directory: changelog-widget/backend
+    env:
+      MONGO_URI: "mongodb://localhost:27017"
+      JWT_SECRET_KEY: "super-secret-jwt-signing-key-dev-changelog-widget"
+      ENVIRONMENT: "development"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

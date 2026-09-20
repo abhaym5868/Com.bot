@@ -37,9 +37,7 @@ class Settings(BaseSettings):
     cors_origins: str = ""  # Optional comma-separated additional origins
 
     # ── MongoDB (Step 2) ──────────────────────────────────────────────────────
-    # MONGO_URI must be set in .env — no default so the app fails fast
-    # if it's missing rather than connecting to the wrong database.
-    mongo_uri: str
+    mongo_uri: str = "mongodb://localhost:27017"
     database_name: str = "changelog_db"
 
     # ── JWT & Authentication (Step 4) ─────────────────────────────────────────
