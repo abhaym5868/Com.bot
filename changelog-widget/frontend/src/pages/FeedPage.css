@@ -450,6 +450,64 @@
   max-height: 520px;
   overflow: auto;
   background: #FAFBFC;
+  border-top: 1px solid var(--color-border);
+}
+
+[data-theme="dark"] .code-viewer-content,
+.dark .code-viewer-content {
+  background: #181D25;
+  border-top: 1px solid #2B3442;
+}
+
+.code-viewer-content,
+.try-code-wrapper {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 #F1F5F9;
+}
+
+.code-viewer-content::-webkit-scrollbar,
+.try-code-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.code-viewer-content::-webkit-scrollbar-track,
+.try-code-wrapper::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+.code-viewer-content::-webkit-scrollbar-thumb,
+.try-code-wrapper::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+[data-theme="dark"] .code-viewer-content,
+[data-theme="dark"] .try-code-wrapper,
+.dark .code-viewer-content,
+.dark .try-code-wrapper {
+  scrollbar-color: #3A4555 #151A22;
+}
+
+[data-theme="dark"] .code-viewer-content::-webkit-scrollbar-track,
+[data-theme="dark"] .try-code-wrapper::-webkit-scrollbar-track,
+.dark .code-viewer-content::-webkit-scrollbar-track,
+.dark .try-code-wrapper::-webkit-scrollbar-track {
+  background: #151A22;
+}
+
+[data-theme="dark"] .code-viewer-content::-webkit-scrollbar-thumb,
+[data-theme="dark"] .try-code-wrapper::-webkit-scrollbar-thumb,
+.dark .code-viewer-content::-webkit-scrollbar-thumb,
+.dark .try-code-wrapper::-webkit-scrollbar-thumb {
+  background: #3A4555;
+}
+
+[data-theme="dark"] .code-viewer-content::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .try-code-wrapper::-webkit-scrollbar-thumb:hover,
+.dark .code-viewer-content::-webkit-scrollbar-thumb:hover,
+.dark .try-code-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #4A5668;
 }
 
 .code-viewer-loading {
@@ -580,9 +638,16 @@
 }
 
 .try-code-wrapper {
+  background: #FFFFFF;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   overflow: auto;
+}
+
+[data-theme="dark"] .try-code-wrapper,
+.dark .try-code-wrapper {
+  background: #181D25;
+  border: 1px solid #2B3442;
 }
 
 /* ── 6. Request Code Examples ── */

@@ -29,7 +29,111 @@ const SCHEMA_FIELDS = [
   { field: 'pages', type: 'Integer', desc: 'Total number of pages available' },
 ]
 
+const graphiteTheme = {
+  'code[class*="language-"]': {
+    color: '#E5E7EB',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '0.84rem',
+    lineHeight: '1.6',
+    direction: 'ltr',
+    textAlign: 'left',
+    whiteSpace: 'pre',
+    wordSpacing: 'normal',
+    wordBreak: 'normal',
+    background: 'none',
+  },
+  'pre[class*="language-"]': {
+    color: '#E5E7EB',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '0.84rem',
+    lineHeight: '1.6',
+    direction: 'ltr',
+    textAlign: 'left',
+    whiteSpace: 'pre',
+    wordSpacing: 'normal',
+    wordBreak: 'normal',
+    background: '#181D25',
+    margin: 0,
+    padding: '1.25rem 1rem',
+  },
+  'comment': { color: '#667085', fontStyle: 'italic' },
+  'prolog': { color: '#667085' },
+  'doctype': { color: '#667085' },
+  'cdata': { color: '#667085' },
+  'punctuation': { color: '#CBD5E1' },
+  'property': { color: '#8FB4FF' },
+  'tag': { color: '#8FB4FF' },
+  'boolean': { color: '#F0B27A' },
+  'number': { color: '#D8B4FE' },
+  'constant': { color: '#D8B4FE' },
+  'symbol': { color: '#8FB4FF' },
+  'selector': { color: '#86CFA5' },
+  'attr-name': { color: '#8FB4FF' },
+  'string': { color: '#86CFA5' },
+  'char': { color: '#86CFA5' },
+  'builtin': { color: '#8FB4FF' },
+  'inserted': { color: '#86CFA5' },
+  'operator': { color: '#CBD5E1' },
+  'entity': { color: '#8FB4FF', cursor: 'help' },
+  'url': { color: '#8FB4FF' },
+  'variable': { color: '#8FB4FF' },
+  'function': { color: '#8FB4FF' },
+  'keyword': { color: '#D8B4FE' },
+  'regex': { color: '#F0B27A' },
+  'important': { color: '#F0B27A', fontWeight: 'bold' },
+  'null': { color: '#F0B27A' },
+}
+
+function useIsDarkMode() {
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof document === 'undefined') return true
+    return (
+      document.documentElement.getAttribute('data-theme') === 'dark' ||
+      document.documentElement.classList.contains('dark') ||
+      (!document.documentElement.getAttribute('data-theme') &&
+        typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-color-scheme: dark)').matches)
+    )
+  })
+
+  useEffect(() => {
+    const checkTheme = () => {
+      const dark =
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.documentElement.classList.contains('dark') ||
+        (!document.documentElement.getAttribute('data-theme') &&
+          window.matchMedia?.('(prefers-color-scheme: dark)').matches)
+      setIsDark(Boolean(dark))
+    }
+
+    checkTheme()
+
+    const observer = new MutationObserver(checkTheme)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme', 'class'],
+    })
+
+    const mediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)')
+    if (mediaQuery?.addEventListener) {
+      mediaQuery.addEventListener('change', checkTheme)
+    }
+    window.addEventListener('storage', checkTheme)
+
+    return () => {
+      observer.disconnect()
+      if (mediaQuery?.removeEventListener) {
+        mediaQuery.removeEventListener('change', checkTheme)
+      }
+      window.removeEventListener('storage', checkTheme)
+    }
+  }, [])
+
+  return isDark
+}
+
 export default function FeedPage() {
+  const isDark = useIsDarkMode()
   const [feedData, setFeedData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(null)
@@ -332,7 +436,7 @@ console.log(\`Retrieved \${data.total} changelog updates:\`, data.updates);`
               ) : (
                 <SyntaxHighlighter
                   language="json"
-                  style={oneLight}
+                  style={isDark ? graphiteTheme : oneLight}
                   showLineNumbers={true}
                   wrapLongLines={false}
                   customStyle={{
@@ -341,13 +445,15 @@ console.log(\`Retrieved \${data.total} changelog updates:\`, data.updates);`
                     fontSize: '0.84rem',
                     fontFamily: 'var(--font-mono)',
                     lineHeight: '1.6',
-                    backgroundColor: '#FAFBFC',
+                    backgroundColor: isDark ? '#181D25' : '#FAFBFC',
                     border: 'none',
                   }}
                   lineNumberStyle={{
-                    color: '#9CA3AF',
+                    color: isDark ? '#667085' : '#9CA3AF',
                     minWidth: '2.5em',
                     paddingRight: '1.2em',
+                    marginRight: '1.2em',
+                    borderRight: isDark ? '1px solid #2B3442' : '1px solid #E5E7EB',
                     userSelect: 'none',
                   }}
                 >
@@ -430,7 +536,7 @@ console.log(\`Retrieved \${data.total} changelog updates:\`, data.updates);`
                   <div className="try-code-wrapper">
                     <SyntaxHighlighter
                       language="json"
-                      style={oneLight}
+                      style={isDark ? graphiteTheme : oneLight}
                       showLineNumbers={true}
                       wrapLongLines={false}
                       customStyle={{
@@ -439,14 +545,17 @@ console.log(\`Retrieved \${data.total} changelog updates:\`, data.updates);`
                         fontSize: '0.82rem',
                         fontFamily: 'var(--font-mono)',
                         lineHeight: '1.5',
-                        backgroundColor: '#FFFFFF',
+                        backgroundColor: isDark ? '#181D25' : '#FFFFFF',
                         borderRadius: 'var(--radius-md)',
                         maxHeight: '320px',
+                        border: 'none',
                       }}
                       lineNumberStyle={{
-                        color: '#9CA3AF',
+                        color: isDark ? '#667085' : '#9CA3AF',
                         minWidth: '2.2em',
                         paddingRight: '1em',
+                        marginRight: '1em',
+                        borderRight: isDark ? '1px solid #2B3442' : '1px solid #E5E7EB',
                         userSelect: 'none',
                       }}
                     >
@@ -498,14 +607,15 @@ console.log(\`Retrieved \${data.total} changelog updates:\`, data.updates);`
               <TabsPanel value="curl" className="code-example-body">
                 <SyntaxHighlighter
                   language="bash"
-                  style={oneLight}
+                  style={isDark ? graphiteTheme : oneLight}
                   customStyle={{
                     margin: 0,
                     padding: '1.25rem 1.25rem',
                     fontSize: '0.85rem',
                     fontFamily: 'var(--font-mono)',
                     lineHeight: '1.6',
-                    backgroundColor: '#FAFBFC',
+                    backgroundColor: isDark ? '#181D25' : '#FAFBFC',
+                    border: 'none',
                   }}
                 >
                   {curlExample}
@@ -515,14 +625,15 @@ console.log(\`Retrieved \${data.total} changelog updates:\`, data.updates);`
               <TabsPanel value="js" className="code-example-body">
                 <SyntaxHighlighter
                   language="javascript"
-                  style={oneLight}
+                  style={isDark ? graphiteTheme : oneLight}
                   customStyle={{
                     margin: 0,
                     padding: '1.25rem 1.25rem',
                     fontSize: '0.85rem',
                     fontFamily: 'var(--font-mono)',
                     lineHeight: '1.6',
-                    backgroundColor: '#FAFBFC',
+                    backgroundColor: isDark ? '#181D25' : '#FAFBFC',
+                    border: 'none',
                   }}
                 >
                   {jsExample}
