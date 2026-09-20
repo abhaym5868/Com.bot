@@ -5,7 +5,7 @@
  * Includes:
  * - Admin Sidebar with navigation & statistics
  * - Filterable changelog list table (category, status, search, pagination)
- * - Actions: Edit, Delete, Quick-Publish
+ * - Actions: Pin/Unpin, Edit, Delete, Quick-Publish
  * - Seamless integration with MarkdownStudio for creating/editing posts
  */
 import { useState, useEffect, useCallback } from 'react'
@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { changelogService } from '../services/changelogService'
 import MarkdownStudio from '../components/MarkdownStudio'
+import AdminSidebar from '../components/AdminSidebar'
 import { Button, Input, Select, Badge, Card } from '../components/ui'
 import './AdminDashboardPage.css'
 
@@ -85,6 +86,32 @@ export default function AdminDashboardPage() {
     }
   }
 
+  const handlePinClick = async (item) => {
+    try {
+      await changelogService.pin(item.id)
+      setActionMessage({ type: 'success', text: `Pinned "${item.title}".` })
+      fetchChangelogs()
+    } catch (err) {
+      setActionMessage({
+        type: 'error',
+        text: err?.response?.data?.detail || 'Failed to pin update.',
+      })
+    }
+  }
+
+  const handleUnpinClick = async (item) => {
+    try {
+      await changelogService.unpin(item.id)
+      setActionMessage({ type: 'success', text: `Unpinned "${item.title}".` })
+      fetchChangelogs()
+    } catch (err) {
+      setActionMessage({
+        type: 'error',
+        text: err?.response?.data?.detail || 'Failed to unpin update.',
+      })
+    }
+  }
+
   const handleDeleteClick = async (item) => {
     if (!window.confirm(`Are you sure you want to delete "${item.title}"? This cannot be undone.`)) {
       return
@@ -114,7 +141,12 @@ export default function AdminDashboardPage() {
         await changelogService.create(payload)
         setActionMessage({
           type: 'success',
-          text: payload.status === 'PUBLISHED' ? 'Update created & published!' : 'Draft created successfully.',
+          text:
+            payload.status === 'PUBLISHED'
+              ? 'Update created & published!'
+              : payload.status === 'SCHEDULED'
+              ? 'Update scheduled!'
+              : 'Draft created successfully.',
         })
       }
       setStudioTarget(null)
@@ -131,8 +163,8 @@ export default function AdminDashboardPage() {
     return (
       <MarkdownStudio
         initialData={studioTarget === 'create' ? null : studioTarget}
-        onSave={(data) => handleStudioSave({ ...data, status: 'DRAFT' })}
-        onPublish={(data) => handleStudioSave({ ...data, status: 'PUBLISHED' })}
+        onSave={(data) => handleStudioSave(data)}
+        onPublish={(data) => handleStudioSave(data)}
         onCancel={() => setStudioTarget(null)}
         isSaving={isSaving}
       />
@@ -142,121 +174,129 @@ export default function AdminDashboardPage() {
   // Count stats
   const publishedCount = changelogs.filter((c) => c.status === 'PUBLISHED').length
   const draftCount = changelogs.filter((c) => c.status === 'DRAFT').length
+  const scheduledCount = changelogs.filter((c) => c.status === 'SCHEDULED').length
 
   return (
     <div className="admin-layout">
-      {/* Sidebar */}
-      <aside className="admin-sidebar">
-        <div className="admin-sidebar-header">
-          <span className="sidebar-logo">⚡</span>
-          <div>
-            <h3 className="sidebar-title">Admin Studio</h3>
-            <p className="sidebar-subtitle">Product Changelogs</p>
-          </div>
+      {/* Sidebar with Navigation and Filters */}
+      <AdminSidebar>
+        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', padding: '6px 12px 4px', letterSpacing: '0.04em' }}>
+          Quick Filters
         </div>
-
-        <nav className="admin-sidebar-nav">
-          <button
-            type="button"
-            className="sidebar-nav-item active"
-            onClick={() => {
-              setStatusFilter('')
-              setCategoryFilter('')
-              setPage(1)
-            }}
-          >
-            📋 All Updates
-          </button>
-          <button
-            type="button"
-            className={`sidebar-nav-item ${statusFilter === 'PUBLISHED' ? 'active' : ''}`}
-            onClick={() => {
-              setStatusFilter('PUBLISHED')
-              setPage(1)
-            }}
-          >
-            🚀 Published ({publishedCount})
-          </button>
-          <button
-            type="button"
-            className={`sidebar-nav-item ${statusFilter === 'DRAFT' ? 'active' : ''}`}
-            onClick={() => {
-              setStatusFilter('DRAFT')
-              setPage(1)
-            }}
-          >
-            📝 Drafts ({draftCount})
-          </button>
-        </nav>
-
-        <div className="admin-sidebar-footer">
-          <div className="admin-user-info">
-            <span className="user-avatar">{user?.name ? user.name.charAt(0).toUpperCase() : 'A'}</span>
-            <div className="user-details">
-              <span className="user-name">{user?.name || 'Administrator'}</span>
-              <span className="user-role">Role: {user?.role || 'admin'}</span>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={logout} title="Sign out">
-            🚪 Logout
-          </Button>
-        </div>
-      </aside>
+        <button
+          type="button"
+          className={`sidebar-nav-item ${!statusFilter ? 'active' : ''}`}
+          onClick={() => {
+            setStatusFilter('')
+            setCategoryFilter('')
+            setPage(1)
+          }}
+        >
+          📋 All Updates ({total})
+        </button>
+        <button
+          type="button"
+          className={`sidebar-nav-item ${statusFilter === 'PUBLISHED' ? 'active' : ''}`}
+          onClick={() => {
+            setStatusFilter('PUBLISHED')
+            setPage(1)
+          }}
+        >
+          🚀 Published
+        </button>
+        <button
+          type="button"
+          className={`sidebar-nav-item ${statusFilter === 'SCHEDULED' ? 'active' : ''}`}
+          onClick={() => {
+            setStatusFilter('SCHEDULED')
+            setPage(1)
+          }}
+        >
+          ⏰ Scheduled
+        </button>
+        <button
+          type="button"
+          className={`sidebar-nav-item ${statusFilter === 'DRAFT' ? 'active' : ''}`}
+          onClick={() => {
+            setStatusFilter('DRAFT')
+            setPage(1)
+          }}
+        >
+          📝 Drafts
+        </button>
+      </AdminSidebar>
 
       {/* Main Admin Content Area */}
       <main className="admin-content">
         {/* Banner Alert Toast */}
         {actionMessage && (
           <div className={`admin-toast alert alert-${actionMessage.type === 'error' ? 'error' : 'success'} fade-in`}>
-            <span>{actionMessage.type === 'error' ? '⚠️' : '✅'}</span>
             <span>{actionMessage.text}</span>
+            <button
+              type="button"
+              className="toast-dismiss"
+              onClick={() => setActionMessage(null)}
+            >
+              ✕
+            </button>
           </div>
         )}
 
         {/* Header Bar */}
-        <header className="admin-header">
+        <div className="admin-header-bar">
           <div>
-            <h1 className="admin-page-title">Changelog Updates</h1>
+            <h1 className="admin-page-title">Product Changelogs</h1>
             <p className="admin-page-subtitle">
-              Manage product announcements, draft release notes, and publish updates.
+              Draft, schedule, pin, and publish product release notes.
             </p>
           </div>
           <div className="admin-header-actions">
-            <Button
-              variant="secondary"
-              size="sm"
-              render={<Link to="/" target="_blank" rel="noreferrer" />}
-            >
+            <Link to="/" className="btn btn-secondary btn-sm" target="_blank">
               🌐 View Public Feed
-            </Button>
+            </Link>
             <Button
               variant="default"
               size="sm"
               onClick={() => setStudioTarget('create')}
             >
-              ✨ Create Update
+              ✨ New Changelog
             </Button>
           </div>
-        </header>
+        </div>
 
-        {/* Admin KPI Stat Cards */}
+        {/* Quick Stats Cards */}
         <div className="admin-stats-grid">
           <Card className="admin-stat-card">
-            <div className="stat-icon-wrapper stat-icon-purple">📊</div>
+            <div className="stat-icon-wrapper stat-icon-indigo">
+              <span>📚</span>
+            </div>
             <div className="stat-content">
-              <span className="stat-label">Total Updates</span>
+              <span className="stat-label">Total in View</span>
               <strong className="stat-value">{total}</strong>
             </div>
           </Card>
           <Card className="admin-stat-card">
-            <div className="stat-icon-wrapper stat-icon-green">🚀</div>
+            <div className="stat-icon-wrapper stat-icon-green">
+              <span>🚀</span>
+            </div>
             <div className="stat-content">
               <span className="stat-label">Published</span>
               <strong className="stat-value">{publishedCount}</strong>
             </div>
           </Card>
           <Card className="admin-stat-card">
-            <div className="stat-icon-wrapper stat-icon-amber">📝</div>
+            <div className="stat-icon-wrapper stat-icon-amber">
+              <span>⏰</span>
+            </div>
+            <div className="stat-content">
+              <span className="stat-label">Scheduled</span>
+              <strong className="stat-value">{scheduledCount}</strong>
+            </div>
+          </Card>
+          <Card className="admin-stat-card">
+            <div className="stat-icon-wrapper stat-icon-slate">
+              <span>📝</span>
+            </div>
             <div className="stat-content">
               <span className="stat-label">Drafts</span>
               <strong className="stat-value">{draftCount}</strong>
@@ -270,7 +310,7 @@ export default function AdminDashboardPage() {
             <Input
               type="text"
               className="input-sm"
-              placeholder="Search updates by title..."
+              placeholder="Search updates by title, slug, version..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value)
@@ -304,6 +344,7 @@ export default function AdminDashboardPage() {
             >
               <option value="">All Statuses</option>
               <option value="PUBLISHED">Published</option>
+              <option value="SCHEDULED">Scheduled</option>
               <option value="DRAFT">Draft</option>
             </Select>
           </div>
@@ -349,16 +390,28 @@ export default function AdminDashboardPage() {
                   <th>Title</th>
                   <th>Category</th>
                   <th>Status</th>
-                  <th>Published Date</th>
+                  <th>Date / Schedule</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {changelogs.map((item) => (
-                  <tr key={item.id}>
+                  <tr key={item.id} className={item.is_pinned ? 'row-pinned' : ''}>
                     <td>
                       <div className="table-title-cell">
-                        <strong className="item-title">{item.title}</strong>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <strong className="item-title">{item.title}</strong>
+                          {item.is_pinned && (
+                            <Badge variant="outline" style={{ borderColor: 'var(--color-accent)', color: 'var(--color-accent)', fontSize: '0.7rem', padding: '1px 5px' }}>
+                              📌 Pinned
+                            </Badge>
+                          )}
+                          {item.version && (
+                            <span style={{ fontSize: '0.75rem', padding: '1px 6px', borderRadius: '4px', background: 'var(--color-accent-dim)', color: 'var(--color-accent)', fontWeight: 600 }}>
+                              {item.version}
+                            </span>
+                          )}
+                        </div>
                         <span className="item-slug">/{item.slug}</span>
                       </div>
                     </td>
@@ -377,17 +430,30 @@ export default function AdminDashboardPage() {
                       </Badge>
                     </td>
                     <td>
-                      <Badge
-                        variant={item.status === 'PUBLISHED' ? 'success' : 'warning'}
-                        className={`status-pill ${
-                          item.status === 'PUBLISHED' ? 'status-published' : 'status-draft'
-                        }`}
-                      >
-                        {item.status}
-                      </Badge>
+                      {item.status === 'PUBLISHED' ? (
+                        <Badge variant="success" className="status-pill status-published">
+                          PUBLISHED
+                        </Badge>
+                      ) : item.status === 'SCHEDULED' ? (
+                        <Badge variant="outline" style={{ borderColor: 'var(--color-warning)', color: 'var(--color-warning)' }}>
+                          ⏰ SCHEDULED
+                        </Badge>
+                      ) : (
+                        <Badge variant="warning" className="status-pill status-draft">
+                          DRAFT
+                        </Badge>
+                      )}
                     </td>
                     <td className="table-date-cell">
-                      {item.published_at
+                      {item.status === 'SCHEDULED' && item.scheduled_for
+                        ? `⏰ ${new Date(item.scheduled_for).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}`
+                        : item.published_at
                         ? new Date(item.published_at).toLocaleDateString(undefined, {
                             month: 'short',
                             day: 'numeric',
@@ -397,13 +463,34 @@ export default function AdminDashboardPage() {
                     </td>
                     <td>
                       <div className="table-actions">
-                        {item.status === 'DRAFT' && (
+                        {item.status === 'PUBLISHED' && (
+                          item.is_pinned ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleUnpinClick(item)}
+                              title="Unpin update"
+                            >
+                              Unpin
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handlePinClick(item)}
+                              title="Pin to top"
+                            >
+                              📌 Pin
+                            </Button>
+                          )
+                        )}
+                        {(item.status === 'DRAFT' || item.status === 'SCHEDULED') && (
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-success"
                             onClick={() => handlePublishClick(item)}
-                            title="Publish this update"
+                            title="Publish this update right now"
                           >
                             🚀 Publish
                           </Button>
@@ -443,17 +530,17 @@ export default function AdminDashboardPage() {
                   variant="secondary"
                   size="sm"
                   disabled={page <= 1}
-                  onClick={() => setPage((p) => p - 1)}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
                 >
-                  ← Prev
+                  Previous
                 </Button>
                 <Button
                   variant="secondary"
                   size="sm"
                   disabled={page >= pages}
-                  onClick={() => setPage((p) => p + 1)}
+                  onClick={() => setPage((p) => Math.min(pages, p + 1))}
                 >
-                  Next →
+                  Next
                 </Button>
               </div>
             </div>

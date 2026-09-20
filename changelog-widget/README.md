@@ -58,12 +58,32 @@ Modern software teams ship features and bug fixes continuously, but communicatin
 ### ✍️ Admin Markdown Studio & Lifecycle Management
 - **Split-Screen Studio**: Live side-by-side editing with synchronized Markdown preview.
 - **Formatting Toolbar**: One-click insertion for headings, bold, italic, code blocks, lists, links, and quotes.
-- **Draft / Publish Workflows**: Posts remain in `DRAFT` status and strictly invisible to public visitors until published.
+- **Draft / Scheduled / Publish Workflows**: Posts can be saved as `DRAFT`, `SCHEDULED` for future automatic publishing, or `PUBLISHED` immediately.
+- **Scheduled Background Worker**: Asynchronous background scheduler auto-promotes `SCHEDULED` posts to `PUBLISHED` when their timestamp passes without external dependencies.
+- **Pin / Unpin to Top**: Admins can pin major release updates to remain sticky at the top of listings.
+- **Version Number Tagging**: Optional semver tracking (e.g. `v2.0.0`) displayed cleanly across feeds, detail pages, and feeds.
 - **Automatic Slug Generation**: Clean URL slugs generated automatically from titles with conflict resolution (e.g., `feature-v1`, `feature-v1-1`).
 - **Cover Image Upload Pipeline**: Ingests JPEG, PNG, WebP, and GIF assets up to 5MB, validates MIME types and file sizes, and serves them securely.
 
-### 📡 Public JSON Feed
-- **Syndication Ready**: `GET /api/v1/changelog/feed` delivers a clean, lightweight JSON response of published entries.
+### 📊 Real Analytics & Engagement Dashboard
+- **Anonymous View Tracking**: Lightweight salted hash prevents double-counting without storing personal data.
+- **Aggregate Metrics**: Total views, reaction distribution, published/scheduled/draft counts, and engagement ratios.
+- **Top Performing Updates**: Identifies most-viewed and most-reacted updates in real-time.
+- **Activity & Audit Trail**: Chronological log of administrative actions (`/admin/activity`) documenting creations, publishes, edits, pins, and deletes.
+
+### 🧩 Standalone Embeddable JavaScript Widget
+- **Shadow DOM Isolation**: Zero CSS conflicts with the host website styles.
+- **Configurable Launcher**: Customize position (bottom-right/bottom-left), accent color, launcher text, and theme.
+- **Slide-out Drawer**: Embedded unread counter, update cards, cover images, and "mark all read" functionality.
+- **Admin Widget Playground**: Interactive preview and copyable code generator at `/admin/widget`.
+
+### 🌙 Dark Mode & Theming
+- **Tokenized Theming**: Instant theme switching powered by CSS custom properties and `data-theme="dark"`.
+- **System Synchronization**: Automatically respects `prefers-color-scheme: dark` with persistent user override in `localStorage`.
+
+### 📡 Feeds & Developer APIs
+- **RSS 2.0 XML Feed**: `GET /api/v1/changelog/rss` delivers an RFC 822 compliant XML feed for RSS readers and syndication tools.
+- **Public JSON Feed**: `GET /api/v1/changelog/feed` delivers a clean, lightweight JSON response of published entries.
 - **HTTP Caching**: Emits `Cache-Control: public, max-age=300` headers for edge CDN and browser caching.
 
 ---
@@ -80,7 +100,8 @@ Modern software teams ship features and bug fixes continuously, but communicatin
 | **HTTP Client** | [Axios](https://axios-http.com/) | Configured with automatic request interceptors and token refresh error retry queues. |
 | **Routing** | [React Router v6](https://reactrouter.com/) | Client-side routing with route guards (`ProtectedRoute`) for admin areas. |
 | **Markdown Rendering** | `react-markdown` + `remark-gfm` | Safe Markdown rendering adhering to GitHub Flavored Markdown standards. |
-| **Design System** | Custom Vanilla CSS | Tailored CSS variables, glassmorphism (`backdrop-filter`), smooth micro-animations, and responsive layouts without bloated CSS libraries. |
+| **UI Primitives** | [Coss UI](https://coss.com/ui) + [@base-ui/react](https://base-ui.com/) | Accessible, headless UI primitives (`Button`, `Input`, `Select`, `Badge`, `Card`, `Dialog`, `Sheet`, `Menu`, `Tabs`, `Textarea`, `Kbd`, `Separator`). |
+| **Design System** | Tailored CSS Token System | Harmonious CSS variables, glassmorphism (`backdrop-filter`), smooth micro-animations, and responsive mobile-first layouts without bloated utility libraries. |
 
 ---
 
@@ -185,6 +206,21 @@ changelog-widget/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/          # Reusable UI components
+│   │   │   ├── ui/              # Coss UI primitives (@base-ui/react)
+│   │   │   │   ├── badge.jsx    # Accessible status & category badges
+│   │   │   │   ├── button.jsx   # Variant & size-aware buttons
+│   │   │   │   ├── card.jsx     # Card header, content, footer system
+│   │   │   │   ├── dialog.jsx   # Modal dialogs & backdrops
+│   │   │   │   ├── input.jsx    # Form text inputs
+│   │   │   │   ├── select.jsx   # Select dropdown primitives
+│   │   │   │   ├── textarea.jsx # Multiline text editor inputs
+│   │   │   │   ├── tabs.jsx     # Tab list, panels, and trigger buttons
+│   │   │   │   ├── sheet.jsx    # Slide-over drawer panels
+│   │   │   │   ├── menu.jsx     # Dropdown menus & items
+│   │   │   │   ├── kbd.jsx      # Keyboard shortcut indicators
+│   │   │   │   ├── separator.jsx# Visual layout dividers
+│   │   │   │   ├── coss-ui.css  # Unified Coss UI style system
+│   │   │   │   └── index.js     # Public barrel export
 │   │   │   ├── MarkdownStudio.jsx & .css    # Split-screen editor & live preview
 │   │   │   ├── Navbar.jsx & .css            # Glassmorphic header & navigation
 │   │   │   ├── NotificationCenter.jsx & .css# Unread bell & slide-over drawer
@@ -196,6 +232,7 @@ changelog-widget/
 │   │   │   ├── AdminDashboardPage.jsx & .css# Changelog management & table view
 │   │   │   ├── AuthPages.css    # Unified styles for auth forms
 │   │   │   ├── ChangelogDetailPage.jsx & .css# Single release note view
+│   │   │   ├── FeedPage.jsx & .css          # Public developer JSON Feed API docs
 │   │   │   ├── ForgotPasswordPage.jsx
 │   │   │   ├── LoginPage.jsx
 │   │   │   ├── ResetPasswordPage.jsx
@@ -210,12 +247,14 @@ changelog-widget/
 │   │   ├── App.jsx              # Routing definition
 │   │   ├── index.css            # Design token system & global utilities
 │   │   └── main.jsx             # React entry point
+│   ├── .env.example             # Frontend environment template
 │   ├── package.json
 │   └── vite.config.js
 │
 ├── postman/
 │   ├── changelog-widget.json                   # Exported Postman collection v2.1.0
 │   └── changelog-widget.postman_collection.json
+├── .env.example                 # Root environment variable template
 ├── .gitignore
 └── README.md
 ```

@@ -120,6 +120,67 @@
   --content-max-width: 1280px;
 }
 
+/* ── Dark Mode Design Tokens ── */
+[data-theme="dark"] {
+  /* Backgrounds */
+  --color-bg: #080B12;
+  --color-bg-card: #101622;
+  --color-bg-elevated: #182132;
+  --color-bg-hover: #141B29;
+  --color-bg-subtle: #0B0F17;
+
+  /* Borders */
+  --color-border: #263044;
+  --color-border-subtle: #1a2233;
+  --color-border-strong: #36445f;
+
+  /* Accent */
+  --color-accent: #6366F1;
+  --color-accent-hover: #4f52e6;
+  --color-accent-dim: rgba(99, 102, 241, 0.12);
+  --color-accent-ring: rgba(99, 102, 241, 0.28);
+  --color-accent-medium: rgba(99, 102, 241, 0.20);
+  --color-accent-secondary: #8B5CF6;
+  --color-accent-cyan: #22D3EE;
+
+  /* Text */
+  --color-text-primary: #F5F7FB;
+  --color-text-secondary: #98A2B3;
+  --color-text-muted: #667085;
+  --color-text-inverse: #080B12;
+  --color-text-link: #6366F1;
+
+  /* Status */
+  --color-success: #22C55E;
+  --color-success-dim: rgba(34, 197, 94, 0.12);
+  --color-success-border: rgba(34, 197, 94, 0.28);
+  --color-warning: #F59E0B;
+  --color-warning-dim: rgba(245, 158, 11, 0.12);
+  --color-warning-border: rgba(245, 158, 11, 0.28);
+  --color-danger: #EF4444;
+  --color-danger-dim: rgba(239, 68, 68, 0.12);
+  --color-danger-border: rgba(239, 68, 68, 0.28);
+
+  /* Categories */
+  --color-new: #22C55E;
+  --color-new-dim: rgba(34, 197, 94, 0.12);
+  --color-new-border: rgba(34, 197, 94, 0.25);
+  --color-improved: #8B5CF6;
+  --color-improved-dim: rgba(139, 92, 246, 0.12);
+  --color-improved-border: rgba(139, 92, 246, 0.25);
+  --color-fixed: #F59E0B;
+  --color-fixed-dim: rgba(245, 158, 11, 0.12);
+  --color-fixed-border: rgba(245, 158, 11, 0.25);
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.6), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.65);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.75);
+  --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.85);
+  --shadow-accent: 0 4px 20px rgba(99, 102, 241, 0.25);
+}
+
 /* ── Reset ── */
 *, *::before, *::after {
   box-sizing: border-box;

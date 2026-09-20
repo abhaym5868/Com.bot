@@ -163,6 +163,16 @@ console.log(\`Retrieved \${data.total} changelog updates:\`, data.updates);`
             >
               {copiedEndpoint ? '✓ Copied!' : '📋 Copy Endpoint'}
             </Button>
+            <a
+              href="/api/v1/changelog/rss"
+              target="_blank"
+              rel="noreferrer"
+              className="btn btn-secondary btn-sm"
+              style={{ textDecoration: 'none', whiteSpace: 'nowrap' }}
+              title="Open RSS 2.0 XML feed"
+            >
+              📡 RSS 2.0 (XML)
+            </a>
           </div>
         </section>
 

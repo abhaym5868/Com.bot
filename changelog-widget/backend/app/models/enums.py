@@ -20,6 +20,7 @@ class ChangelogCategory(str, Enum):
 
 class ChangelogStatus(str, Enum):
     DRAFT = "DRAFT"
+    SCHEDULED = "SCHEDULED"
     PUBLISHED = "PUBLISHED"
 
 

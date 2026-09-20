@@ -49,22 +49,21 @@ export default function NotificationCenter() {
 
   return (
     <>
-      {/* Header Bell Trigger Button using Coss UI Button */}
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="notif-trigger-btn"
+      {/* Header Bell Trigger Button */}
+      <button
+        type="button"
+        className={`notif-trigger-btn ${unreadCount > 0 ? 'notif-trigger-pill' : ''}`}
         onClick={handleOpenDrawer}
         aria-label={`What's New notifications, ${unreadCount} unread`}
         title="What's New"
       >
         <span className="notif-bell-icon">🔔</span>
         {unreadCount > 0 && (
-          <Badge variant="default" className="notif-badge fade-in">
+          <span className="notif-pill-count">
             {unreadCount > 9 ? '9+' : unreadCount}
-          </Badge>
+          </span>
         )}
-      </Button>
+      </button>
 
       {/* Slide-over Drawer using Coss UI Sheet */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import NotificationCenter from './NotificationCenter'
+import ThemeSwitcher from './ThemeSwitcher'
+import CommandPalette from './CommandPalette'
 import { Button, Badge, Kbd, Menu, MenuTrigger, MenuPopup, MenuItem, MenuSeparator, Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetBody } from './ui'
 import './Navbar.css'
 
@@ -11,34 +13,27 @@ export default function Navbar() {
   const location = useLocation()
 
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [isCmdOpen, setIsCmdOpen] = useState(false)
 
   // Global Cmd+K / Ctrl+K search shortcut
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
-        triggerSearchFocus()
+        setIsCmdOpen(true)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [location.pathname])
+  }, [])
 
   // Close mobile drawer on route change
   useEffect(() => {
     setIsMobileOpen(false)
   }, [location.pathname])
 
-  const triggerSearchFocus = () => {
-    if (location.pathname === '/') {
-      const el = document.getElementById('timeline-search-input')
-      if (el) {
-        el.focus()
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }
-    } else {
-      navigate('/?focus=search')
-    }
+  const openCommandPalette = () => {
+    setIsCmdOpen(true)
     setIsMobileOpen(false)
   }
 
@@ -85,13 +80,13 @@ export default function Navbar() {
           </nav>
         </div>
 
-        {/* Right: Search Pill + Notification Bell + Coss UI Menu Profile */}
+        {/* Right: Search Pill + Theme Switcher + Notification Bell + Profile */}
         <div className="navbar-right">
           {/* Search Pill */}
           <button
             type="button"
             className="navbar-search-pill"
-            onClick={triggerSearchFocus}
+            onClick={openCommandPalette}
             title="Search updates (⌘K)"
             aria-label="Search updates"
           >
@@ -99,6 +94,9 @@ export default function Navbar() {
             <span className="search-pill-text">Search…</span>
             <Kbd className="search-pill-kbd">⌘K</Kbd>
           </button>
+
+          {/* Theme Switcher */}
+          <ThemeSwitcher />
 
           {/* Notification Bell (Preserving What's New logic) */}
           <NotificationCenter />
@@ -204,14 +202,17 @@ export default function Navbar() {
                   </div>
                   <span className="navbar-logo-text">Changelog</span>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => setIsMobileOpen(false)}
-                  aria-label="Close menu"
-                >
-                  ✕
-                </Button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <ThemeSwitcher />
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setIsMobileOpen(false)}
+                    aria-label="Close menu"
+                  >
+                    ✕
+                  </Button>
+                </div>
               </SheetHeader>
 
               <SheetBody>
@@ -220,7 +221,7 @@ export default function Navbar() {
                   <button
                     type="button"
                     className="mobile-search-bar"
-                    onClick={triggerSearchFocus}
+                    onClick={openCommandPalette}
                   >
                     <span>🔍</span>
                     <span>Search product updates…</span>
@@ -313,6 +314,9 @@ export default function Navbar() {
           </Sheet>
         </div>
       </div>
+
+      {/* Global Command Palette Modal */}
+      <CommandPalette isOpen={isCmdOpen} onClose={() => setIsCmdOpen(false)} />
     </header>
   )
 }

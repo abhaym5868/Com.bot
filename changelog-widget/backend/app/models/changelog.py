@@ -20,7 +20,13 @@ class ChangelogModel(MongoBaseModel):
     category: ChangelogCategory = Field(..., description="Category: NEW, IMPROVED, or FIXED")
     cover_image: str | None = Field(default=None, description="Optional URL or path to cover image")
     published_at: datetime | None = Field(default=None, description="Release publication timestamp")
-    status: ChangelogStatus = Field(default=ChangelogStatus.DRAFT, description="Status: DRAFT or PUBLISHED")
+    status: ChangelogStatus = Field(default=ChangelogStatus.DRAFT, description="Status: DRAFT, SCHEDULED, or PUBLISHED")
+    # ── New fields (all optional for backward compatibility) ──────────────────
+    version: str | None = Field(default=None, max_length=50, description="Optional version tag (e.g. v1.0.0, v2.4)")
+    is_pinned: bool = Field(default=False, description="Pinned updates float above normal chronological order")
+    scheduled_for: datetime | None = Field(default=None, description="Target publication time for SCHEDULED status")
+    # ── Audit ─────────────────────────────────────────────────────────────────
     created_by: PyObjectId = Field(..., description="User ID of the admin author")
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
+

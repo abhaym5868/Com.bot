@@ -1,8 +1,8 @@
 """
 routes/changelog.py
 -------------------
-API endpoints for changelog management: CRUD, draft/publish actions,
-filtering by category/status, pagination, and role-based visibility.
+API endpoints for changelog management: CRUD, draft/scheduled/publish actions,
+filtering by category/status, pagination, pin/unpin, and role-based visibility.
 """
 
 from fastapi import APIRouter, Depends, Query, Response, status
@@ -22,6 +22,7 @@ from app.schemas.changelog import (
     PaginatedChangelogResponse,
 )
 from app.services import changelog_service
+from app.services.analytics_service import log_admin_action
 
 router = APIRouter()
 
@@ -31,7 +32,7 @@ router = APIRouter()
     response_model=ChangelogResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create changelog update (Admin only)",
-    description="Creates a new changelog update in DRAFT or PUBLISHED status. Auto-generates unique slug if not provided.",
+    description="Creates a new changelog update in DRAFT, SCHEDULED, or PUBLISHED status. Auto-generates unique slug if not provided.",
 )
 async def create_changelog(
     data: ChangelogCreate,
@@ -39,6 +40,15 @@ async def create_changelog(
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
     changelog = await changelog_service.create_changelog(db, admin_user.id, data)
+    await log_admin_action(
+        db,
+        admin_user.id,
+        admin_user.name,
+        "CREATE_CHANGELOG",
+        "changelog",
+        changelog.id,
+        changelog.title,
+    )
     return ChangelogResponse.model_validate(changelog.model_dump())
 
 
@@ -46,14 +56,14 @@ async def create_changelog(
     "",
     response_model=PaginatedChangelogResponse,
     summary="List changelog updates",
-    description="Retrieves a paginated list of changelog updates sorted newest first. Public visitors strictly see PUBLISHED posts; admins can view drafts and filter by status.",
+    description="Retrieves a paginated list of changelog updates sorted newest first. Public visitors strictly see PUBLISHED posts; admins can view drafts/scheduled and filter by status.",
 )
 async def list_changelogs(
     page: int = Query(default=1, ge=1, description="Page number"),
     limit: int = Query(default=10, ge=1, le=100, description="Items per page"),
     status: ChangelogStatus | None = Query(default=None, description="Filter by status (Admin only)"),
     category: ChangelogCategory | None = Query(default=None, description="Filter by category (NEW, IMPROVED, FIXED)"),
-    search: str | None = Query(default=None, description="Search keyword in title or markdown"),
+    search: str | None = Query(default=None, description="Search keyword in title, content, slug, or version"),
     current_user: UserModel | None = Depends(get_optional_current_user),
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
@@ -109,6 +119,7 @@ async def changelog_feed(
             category=item.category,
             published_at=item.published_at,
             cover_image=item.cover_image,
+            version=item.version,
         )
         for item in result.items
     ]
@@ -126,7 +137,7 @@ async def changelog_feed(
     "/{slug}",
     response_model=ChangelogResponse,
     summary="Get single changelog update",
-    description="Fetches a changelog update by unique slug or ObjectId. Public visitors cannot view drafts (returns 404).",
+    description="Fetches a changelog update by unique slug or ObjectId. Public visitors cannot view drafts or scheduled updates (returns 404).",
 )
 async def get_changelog(
     slug: str,
@@ -142,7 +153,7 @@ async def get_changelog(
     "/{id}",
     response_model=ChangelogResponse,
     summary="Update changelog post (Admin only)",
-    description="Updates title, slug, content, category, cover image, status, or published_at for an existing changelog.",
+    description="Updates title, slug, content, category, cover image, status, version, is_pinned, scheduled_for, or published_at for an existing changelog.",
 )
 async def update_changelog(
     id: str,
@@ -151,6 +162,15 @@ async def update_changelog(
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
     updated = await changelog_service.update_changelog(db, id, data)
+    await log_admin_action(
+        db,
+        admin_user.id,
+        admin_user.name,
+        "UPDATE_CHANGELOG",
+        "changelog",
+        updated.id,
+        updated.title,
+    )
     return ChangelogResponse.model_validate(updated.model_dump())
 
 
@@ -158,22 +178,30 @@ async def update_changelog(
     "/{id}",
     response_model=MessageResponse,
     summary="Delete changelog post (Admin only)",
-    description="Permanently deletes a changelog post and cleans up any reactions associated with it.",
+    description="Permanently deletes a changelog post and cleans up any reactions and views associated with it.",
 )
 async def delete_changelog(
     id: str,
     admin_user: UserModel = Depends(get_current_admin_user),
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
+    await log_admin_action(
+        db,
+        admin_user.id,
+        admin_user.name,
+        "DELETE_CHANGELOG",
+        "changelog",
+        id,
+    )
     await changelog_service.delete_changelog(db, id)
-    return MessageResponse(message="Changelog and associated reactions successfully deleted.")
+    return MessageResponse(message="Changelog and associated data successfully deleted.")
 
 
 @router.post(
     "/{id}/publish",
     response_model=ChangelogResponse,
-    summary="Publish a draft changelog (Admin only)",
-    description="Transitions a draft changelog post to PUBLISHED status and timestamps published_at.",
+    summary="Publish a draft/scheduled changelog (Admin only)",
+    description="Transitions a draft or scheduled changelog post to PUBLISHED status and timestamps published_at.",
 )
 async def publish_changelog(
     id: str,
@@ -181,4 +209,61 @@ async def publish_changelog(
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
     published = await changelog_service.publish_changelog(db, id)
+    await log_admin_action(
+        db,
+        admin_user.id,
+        admin_user.name,
+        "PUBLISH_CHANGELOG",
+        "changelog",
+        published.id,
+        published.title,
+    )
     return ChangelogResponse.model_validate(published.model_dump())
+
+
+@router.post(
+    "/{id}/pin",
+    response_model=ChangelogResponse,
+    summary="Pin a published changelog (Admin only)",
+    description="Pins a published changelog so it floats to the top of all listings.",
+)
+async def pin_changelog(
+    id: str,
+    admin_user: UserModel = Depends(get_current_admin_user),
+    db: AsyncIOMotorDatabase = Depends(get_database),
+):
+    pinned = await changelog_service.pin_changelog(db, id)
+    await log_admin_action(
+        db,
+        admin_user.id,
+        admin_user.name,
+        "PIN_CHANGELOG",
+        "changelog",
+        pinned.id,
+        pinned.title,
+    )
+    return ChangelogResponse.model_validate(pinned.model_dump())
+
+
+@router.post(
+    "/{id}/unpin",
+    response_model=ChangelogResponse,
+    summary="Unpin a changelog (Admin only)",
+    description="Removes pin from a changelog, returning it to normal chronological order.",
+)
+async def unpin_changelog(
+    id: str,
+    admin_user: UserModel = Depends(get_current_admin_user),
+    db: AsyncIOMotorDatabase = Depends(get_database),
+):
+    unpinned = await changelog_service.unpin_changelog(db, id)
+    await log_admin_action(
+        db,
+        admin_user.id,
+        admin_user.name,
+        "UNPIN_CHANGELOG",
+        "changelog",
+        unpinned.id,
+        unpinned.title,
+    )
+    return ChangelogResponse.model_validate(unpinned.model_dump())

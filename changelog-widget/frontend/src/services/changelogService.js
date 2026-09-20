@@ -40,6 +40,16 @@ export const changelogService = {
     return res.data
   },
 
+  async pin(id) {
+    const res = await api.post(`/api/v1/changelog/${id}/pin`)
+    return res.data
+  },
+
+  async unpin(id) {
+    const res = await api.post(`/api/v1/changelog/${id}/unpin`)
+    return res.data
+  },
+
   async uploadImage(file) {
     const formData = new FormData()
     formData.append('file', file)

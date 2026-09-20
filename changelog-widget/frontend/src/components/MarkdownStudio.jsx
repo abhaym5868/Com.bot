@@ -2,7 +2,7 @@
  * components/MarkdownStudio.jsx
  * ─────────────────────────────
  * Split-screen Markdown Studio for creating and editing changelog posts.
- * Left: Structured metadata inputs + Markdown editor with formatting toolbar.
+ * Left: Structured metadata inputs (title, category, version, status, scheduled date) + Markdown editor.
  * Right: Live, real-time rendered preview matching the public Changelog UI.
  */
 import { useState, useEffect } from 'react'
@@ -27,9 +27,17 @@ export default function MarkdownStudio({
 }) {
   const [title, setTitle] = useState(initialData?.title || '')
   const [category, setCategory] = useState(initialData?.category || 'NEW')
+  const [version, setVersion] = useState(initialData?.version || '')
+  const [status, setStatus] = useState(initialData?.status || 'DRAFT')
+  const [scheduledFor, setScheduledFor] = useState(
+    initialData?.scheduled_for
+      ? new Date(initialData.scheduled_for).toISOString().slice(0, 16)
+      : ''
+  )
   const [coverImage, setCoverImage] = useState(initialData?.cover_image || '')
   const [contentMarkdown, setContentMarkdown] = useState(
-    initialData?.content_markdown || '## What changed\n\n- Detailed description of the feature or fix\n- Performance improvements and UI tweaks\n\n```javascript\n// Example usage\nconst client = new ChangelogWidget();\n```'
+    initialData?.content_markdown ||
+      '## What changed\n\n- Detailed description of the feature or fix\n- Performance improvements and UI tweaks\n\n```javascript\n// Example usage\nconst client = new ChangelogWidget();\n```'
   )
   const [activeTab, setActiveTab] = useState('split') // 'split', 'edit', 'preview' on mobile
   const [isUploadingCover, setIsUploadingCover] = useState(false)
@@ -72,6 +80,13 @@ export default function MarkdownStudio({
     if (initialData) {
       setTitle(initialData.title || '')
       setCategory(initialData.category || 'NEW')
+      setVersion(initialData.version || '')
+      setStatus(initialData.status || 'DRAFT')
+      setScheduledFor(
+        initialData.scheduled_for
+          ? new Date(initialData.scheduled_for).toISOString().slice(0, 16)
+          : ''
+      )
       setCoverImage(initialData.cover_image || '')
       setContentMarkdown(initialData.content_markdown || '')
     }
@@ -88,43 +103,59 @@ export default function MarkdownStudio({
     const selected = text.substring(start, end)
     const replacement = prefix + selected + suffix
 
-    const updated = text.substring(0, start) + replacement + text.substring(end)
-    setContentMarkdown(updated)
+    const nextText =
+      text.substring(0, start) + replacement + text.substring(end)
+    setContentMarkdown(nextText)
 
     setTimeout(() => {
       textarea.focus()
-      textarea.setSelectionRange(start + prefix.length, end + prefix.length)
-    }, 10)
+      textarea.setSelectionRange(
+        start + prefix.length,
+        start + prefix.length + selected.length
+      )
+    }, 0)
   }
 
-  const handleSaveDraft = (e) => {
-    e.preventDefault()
-    if (!title.trim()) {
-      alert('Please enter a title for the changelog.')
-      return
-    }
-    onSave({
+  const buildPayload = (explicitStatus = null) => {
+    const finalStatus = explicitStatus || status
+    const payload = {
       title: title.trim(),
       category,
       cover_image: coverImage.trim() || null,
       content_markdown: contentMarkdown,
-      status: 'DRAFT',
-    })
+      version: version.trim() || null,
+      status: finalStatus,
+    }
+
+    if (finalStatus === 'SCHEDULED' && scheduledFor) {
+      payload.scheduled_for = new Date(scheduledFor).toISOString()
+    } else if (finalStatus !== 'SCHEDULED') {
+      payload.scheduled_for = null
+    }
+
+    return payload
   }
 
-  const handlePublish = (e) => {
-    e.preventDefault()
+  const handleSave = (e) => {
+    if (e) e.preventDefault()
     if (!title.trim()) {
-      alert('Please enter a title for the changelog.')
+      alert('Please provide a title for the changelog.')
       return
     }
-    onPublish({
-      title: title.trim(),
-      category,
-      cover_image: coverImage.trim() || null,
-      content_markdown: contentMarkdown,
-      status: 'PUBLISHED',
-    })
+    if (status === 'SCHEDULED' && !scheduledFor) {
+      alert('Please specify a scheduled publish date and time.')
+      return
+    }
+    onSave(buildPayload())
+  }
+
+  const handlePublishNow = (e) => {
+    if (e) e.preventDefault()
+    if (!title.trim()) {
+      alert('Please provide a title for the changelog.')
+      return
+    }
+    onPublish(buildPayload('PUBLISHED'))
   }
 
   return (
@@ -181,25 +212,35 @@ export default function MarkdownStudio({
           </Button>
         </div>
 
-        <div className="studio-actions">
+        <div className="studio-navbar-actions">
           <Button
             type="button"
             variant="secondary"
             size="sm"
-            onClick={handleSaveDraft}
+            onClick={handleSave}
             disabled={isSaving}
           >
-            {isSaving ? 'Saving...' : 'Save Draft'}
+            {isSaving
+              ? 'Saving...'
+              : status === 'SCHEDULED'
+              ? '⏰ Save Scheduled'
+              : status === 'PUBLISHED'
+              ? '💾 Save Changes'
+              : '📝 Save Draft'}
           </Button>
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            onClick={handlePublish}
-            disabled={isSaving}
-          >
-            {isSaving ? 'Publishing...' : 'Publish Update'}
-          </Button>
+
+          {status !== 'PUBLISHED' && (
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              className="btn-publish"
+              onClick={handlePublishNow}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Publishing...' : '🚀 Publish Now'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -222,7 +263,7 @@ export default function MarkdownStudio({
             />
           </div>
 
-          <div className="studio-meta-grid">
+          <div className="studio-meta-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
             <div className="studio-field-group">
               <label className="field-label" htmlFor="studio-category">
                 Category
@@ -241,51 +282,93 @@ export default function MarkdownStudio({
             </div>
 
             <div className="studio-field-group">
-              <label className="field-label" htmlFor="studio-cover">
-                Cover Image (Upload or URL)
+              <label className="field-label" htmlFor="studio-version">
+                Version Release (optional)
               </label>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <Input
-                  id="studio-cover"
-                  type="text"
-                  placeholder="https://... or click Upload"
-                  value={coverImage}
-                  onChange={(e) => setCoverImage(e.target.value)}
-                  style={{ flex: 1 }}
-                />
-                <label
-                  className="btn btn-secondary btn-sm"
-                  style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}
-                  title="Upload image from computer"
-                >
-                  {isUploadingCover ? '⏳ Uploading...' : '📁 Upload'}
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif"
-                    style={{ display: 'none' }}
-                    onChange={handleCoverFileChange}
-                    disabled={isUploadingCover}
-                  />
+              <Input
+                id="studio-version"
+                type="text"
+                placeholder="e.g. v2.1.0"
+                value={version}
+                onChange={(e) => setVersion(e.target.value)}
+              />
+            </div>
+
+            <div className="studio-field-group">
+              <label className="field-label" htmlFor="studio-status">
+                Status
+              </label>
+              <Select
+                id="studio-status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="DRAFT">📝 Draft</option>
+                <option value="SCHEDULED">⏰ Scheduled</option>
+                <option value="PUBLISHED">🚀 Published</option>
+              </Select>
+            </div>
+
+            {status === 'SCHEDULED' && (
+              <div className="studio-field-group">
+                <label className="field-label" htmlFor="studio-scheduled-for">
+                  Publish Date & Time <span className="text-danger">*</span>
                 </label>
-                {coverImage && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-danger"
-                    onClick={() => setCoverImage('')}
-                    title="Remove cover image"
-                  >
-                    ✕
-                  </Button>
-                )}
+                <Input
+                  id="studio-scheduled-for"
+                  type="datetime-local"
+                  value={scheduledFor}
+                  onChange={(e) => setScheduledFor(e.target.value)}
+                  required
+                />
               </div>
-              {uploadError && (
-                <p className="text-danger" style={{ fontSize: '12px', marginTop: '4px' }}>
-                  {uploadError}
-                </p>
+            )}
+          </div>
+
+          <div className="studio-field-group">
+            <label className="field-label" htmlFor="studio-cover">
+              Cover Image (Upload or URL)
+            </label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <Input
+                id="studio-cover"
+                type="text"
+                placeholder="https://... or click Upload"
+                value={coverImage}
+                onChange={(e) => setCoverImage(e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <label
+                className="btn btn-secondary btn-sm"
+                style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}
+                title="Upload image from computer"
+              >
+                {isUploadingCover ? '⏳ Uploading...' : '📁 Upload'}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  style={{ display: 'none' }}
+                  onChange={handleCoverFileChange}
+                  disabled={isUploadingCover}
+                />
+              </label>
+              {coverImage && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCoverImage('')}
+                  title="Remove image"
+                >
+                  ✕
+                </Button>
               )}
             </div>
+            {uploadError && (
+              <span className="text-danger" style={{ fontSize: '0.8rem', marginTop: '4px', display: 'block' }}>
+                {uploadError}
+              </span>
+            )}
           </div>
 
           {/* Markdown Toolbar */}
@@ -293,18 +376,10 @@ export default function MarkdownStudio({
             <button
               type="button"
               className="tool-btn"
-              onClick={() => insertMarkdown('### ')}
-              title="Heading 3"
-            >
-              H3
-            </button>
-            <button
-              type="button"
-              className="tool-btn"
               onClick={() => insertMarkdown('**', '**')}
               title="Bold"
             >
-              <strong>B</strong>
+              <b>B</b>
             </button>
             <button
               type="button"
@@ -312,7 +387,24 @@ export default function MarkdownStudio({
               onClick={() => insertMarkdown('*', '*')}
               title="Italic"
             >
-              <em>I</em>
+              <i>I</i>
+            </button>
+            <span className="tool-divider" />
+            <button
+              type="button"
+              className="tool-btn"
+              onClick={() => insertMarkdown('## ')}
+              title="Heading 2"
+            >
+              H2
+            </button>
+            <button
+              type="button"
+              className="tool-btn"
+              onClick={() => insertMarkdown('### ')}
+              title="Heading 3"
+            >
+              H3
             </button>
             <span className="tool-divider" />
             <button
@@ -420,7 +512,7 @@ export default function MarkdownStudio({
               </div>
             )}
 
-            <div className="studio-preview-tags">
+            <div className="studio-preview-tags" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <Badge
                 variant={
                   category === 'NEW'
@@ -439,6 +531,26 @@ export default function MarkdownStudio({
               >
                 {category}
               </Badge>
+
+              {version && (
+                <span className="version-pill" style={{
+                  fontSize: '0.75rem',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  background: 'var(--color-accent-dim)',
+                  color: 'var(--color-accent)',
+                  fontWeight: 600,
+                }}>
+                  {version}
+                </span>
+              )}
+
+              {status === 'SCHEDULED' && (
+                <Badge variant="outline" style={{ borderColor: 'var(--color-warning)', color: 'var(--color-warning)' }}>
+                  ⏰ Scheduled {scheduledFor ? `for ${new Date(scheduledFor).toLocaleDateString()}` : ''}
+                </Badge>
+              )}
+
               <span className="preview-date">
                 {new Date().toLocaleDateString(undefined, {
                   month: 'short',

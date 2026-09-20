@@ -8,19 +8,20 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
+  gap: 6px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border-radius: var(--radius-full);
   background: transparent;
-  border: 1px solid transparent;
+  border: 1px solid var(--color-border);
   cursor: pointer;
   transition: all var(--transition-base);
   color: var(--color-text-secondary);
-  margin: 0 var(--space-1);
 }
 .notif-trigger-btn:hover {
   background: var(--color-bg-hover);
-  border-color: var(--color-border);
+  border-color: var(--color-border-subtle);
   color: var(--color-text-primary);
 }
 .notif-trigger-btn:focus-visible {
@@ -28,10 +29,25 @@
   box-shadow: 0 0 0 3px var(--color-accent-ring);
 }
 
+.notif-trigger-pill {
+  border-color: rgba(99, 102, 241, 0.35);
+  background: var(--color-accent-dim);
+}
+
 .notif-bell-icon {
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1;
   display: block;
+}
+
+.notif-pill-count {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--color-accent);
+  padding: 1px 6px;
+  border-radius: 9999px;
+  line-height: 1.2;
 }
 
 /* ── Unread Badge ── */

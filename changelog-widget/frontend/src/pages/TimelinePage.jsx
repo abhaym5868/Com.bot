@@ -67,9 +67,26 @@ function ChangelogCard({ item }) {
       )}
 
       <div className="timeline-card-body">
-        {/* Metadata: Category Badge & Publication Date */}
+        {/* Metadata: Category Badge, Version, Pinned & Publication Date */}
         <div className="timeline-card-meta">
           <CategoryBadge category={item.category} />
+          {item.version && (
+            <span className="version-pill" style={{
+              fontSize: '0.75rem',
+              padding: '2px 7px',
+              borderRadius: '4px',
+              background: 'var(--color-accent-dim)',
+              color: 'var(--color-accent)',
+              fontWeight: 600,
+            }}>
+              {item.version}
+            </span>
+          )}
+          {item.is_pinned && (
+            <Badge variant="outline" style={{ borderColor: 'var(--color-accent)', color: 'var(--color-accent)', fontSize: '0.75rem' }}>
+              📌 Pinned
+            </Badge>
+          )}
           {formattedDate && (
             <time className="timeline-date" dateTime={item.published_at}>
               {formattedDate}

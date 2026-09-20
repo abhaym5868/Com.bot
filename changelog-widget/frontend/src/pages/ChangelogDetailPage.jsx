@@ -3,17 +3,21 @@
  * ─────────────────────────────
  * Detailed view of a single changelog post.
  * Features:
- * - Clean header with category badge, title, published date
+ * - Clean header with category badge, version release pill, title, published date
  * - Safe Markdown rendering via react-markdown + remark-gfm
  * - Cover image display with smooth aspect containment
- * - Skeleton loading state and error handling
  * - Interactive Reactions component
+ * - View tracking via analyticsService
+ * - Social Share & One-Click Copy Link
+ * - Related updates in the same category
+ * - Previous / Next navigation
  */
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { changelogService } from '../services/changelogService'
+import analyticsService from '../services/analyticsService'
 import ReactionButtons from '../components/ReactionButtons'
 import { Badge, Button } from '../components/ui'
 import './ChangelogDetailPage.css'
@@ -28,18 +32,39 @@ export default function ChangelogDetailPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const [changelog, setChangelog] = useState(null)
+  const [related, setRelated] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     let isMounted = true
     setLoading(true)
     setError(null)
+    setRelated([])
 
     changelogService
       .getBySlug(slug)
       .then((data) => {
-        if (isMounted) setChangelog(data)
+        if (!isMounted) return
+        setChangelog(data)
+
+        // Record anonymous page view for analytics
+        if (data?.id) {
+          analyticsService.recordView(data.id)
+        }
+
+        // Fetch related updates in the same category
+        if (data?.category) {
+          changelogService
+            .list({ category: data.category, limit: 4 })
+            .then((res) => {
+              if (!isMounted) return
+              const others = (res.items || []).filter((item) => item.slug !== slug).slice(0, 3)
+              setRelated(others)
+            })
+            .catch(() => {})
+        }
       })
       .catch((err) => {
         if (isMounted) {
@@ -54,6 +79,24 @@ export default function ChangelogDetailPage() {
       isMounted = false
     }
   }, [slug])
+
+  const handleShare = async () => {
+    const url = window.location.href
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: changelog?.title || 'Product Update',
+          url,
+        })
+        return
+      } catch {
+        // Fallback to clipboard if share was cancelled or failed
+      }
+    }
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2500)
+  }
 
   if (loading) {
     return (
@@ -100,7 +143,7 @@ export default function ChangelogDetailPage() {
 
   return (
     <article className="detail-page-container fade-in">
-      <div className="detail-nav-back">
+      <div className="detail-nav-back" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Button
           type="button"
           variant="ghost"
@@ -109,6 +152,17 @@ export default function ChangelogDetailPage() {
           aria-label="Back to previous page"
         >
           <span>←</span> Back to Updates
+        </Button>
+
+        {/* Share / Copy Link button */}
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={handleShare}
+          title="Share or copy direct link to this update"
+        >
+          {copied ? '✅ Link Copied!' : '🔗 Share Update'}
         </Button>
       </div>
 
@@ -130,9 +184,30 @@ export default function ChangelogDetailPage() {
           <Badge variant={catMeta.variant} className={catMeta.cls}>
             {catMeta.label}
           </Badge>
+
+          {changelog.version && (
+            <span className="version-pill" style={{
+              fontSize: '0.75rem',
+              padding: '3px 8px',
+              borderRadius: '4px',
+              background: 'var(--color-accent-dim)',
+              color: 'var(--color-accent)',
+              fontWeight: 600,
+            }}>
+              {changelog.version}
+            </span>
+          )}
+
+          {changelog.is_pinned && (
+            <Badge variant="outline" style={{ borderColor: 'var(--color-accent)', color: 'var(--color-accent)', fontSize: '0.75rem' }}>
+              📌 Pinned
+            </Badge>
+          )}
+
           <time className="detail-date" dateTime={changelog.published_at}>
             {dateStr}
           </time>
+
           {changelog.status === 'DRAFT' && (
             <Badge variant="warning" className="detail-draft-pill">
               DRAFT
@@ -157,6 +232,33 @@ export default function ChangelogDetailPage() {
           ← All Product Updates
         </Button>
       </footer>
+
+      {/* Related Updates Section */}
+      {related.length > 0 && (
+        <section className="detail-related-section">
+          <h3 className="related-section-title">Related {catMeta.label} Updates</h3>
+          <div className="related-grid">
+            {related.map((item) => (
+              <Link key={item.id} to={`/changelog/${item.slug}`} className="related-card">
+                <div className="related-card-header">
+                  <Badge variant={catMeta.variant} className={catMeta.cls} style={{ fontSize: '0.7rem' }}>
+                    {catMeta.label}
+                  </Badge>
+                  {item.version && (
+                    <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
+                      {item.version}
+                    </span>
+                  )}
+                </div>
+                <h4 className="related-card-title">{item.title}</h4>
+                <time className="related-card-date">
+                  {item.published_at ? new Date(item.published_at).toLocaleDateString() : ''}
+                </time>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </article>
   )
 }

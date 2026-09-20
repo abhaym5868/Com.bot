@@ -102,5 +102,50 @@ async def create_database_indexes(db: AsyncIOMotorDatabase) -> dict[str, list[st
     results["refresh_tokens"] = created_refresh_token_indexes
     logger.info("Ensured refresh_tokens indexes: %s", created_refresh_token_indexes)
 
+    # ── 5. Views collection indexes ───────────────────────────────────────────
+    view_indexes = [
+        IndexModel(
+            [("changelog_id", ASCENDING), ("visitor_hash", ASCENDING), ("timestamp", DESCENDING)],
+            name="idx_views_changelog_visitor_ts",
+        ),
+        IndexModel(
+            [("changelog_id", ASCENDING)],
+            name="idx_views_changelog_id",
+        ),
+    ]
+    created_view_indexes = await db["views"].create_indexes(view_indexes)
+    results["views"] = created_view_indexes
+    logger.info("Ensured views indexes: %s", created_view_indexes)
+
+    # ── 6. Audit Logs collection indexes ─────────────────────────────────────
+    audit_indexes = [
+        IndexModel(
+            [("timestamp", DESCENDING)],
+            name="idx_audit_logs_timestamp",
+        ),
+        IndexModel(
+            [("user_id", ASCENDING)],
+            name="idx_audit_logs_user_id",
+        ),
+    ]
+    created_audit_indexes = await db["audit_logs"].create_indexes(audit_indexes)
+    results["audit_logs"] = created_audit_indexes
+    logger.info("Ensured audit_logs indexes: %s", created_audit_indexes)
+
+    # ── 7. Changelogs: is_pinned index for pin-first sort ─────────────────────
+    pin_index = [
+        IndexModel(
+            [("is_pinned", DESCENDING), ("published_at", DESCENDING)],
+            name="idx_changelogs_pinned_published",
+        ),
+        IndexModel(
+            [("status", ASCENDING), ("scheduled_for", ASCENDING)],
+            name="idx_changelogs_status_scheduled_for",
+        ),
+    ]
+    created_pin_indexes = await db["changelogs"].create_indexes(pin_index)
+    results["changelogs_pin"] = created_pin_indexes
+    logger.info("Ensured changelogs pin indexes: %s", created_pin_indexes)
+
     return results
 
