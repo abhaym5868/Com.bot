@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { Input, Button } from '../components/ui'
 import './AuthPages.css'
 
 export default function SignupPage() {
@@ -54,9 +55,8 @@ export default function SignupPage() {
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label className="form-label" htmlFor="name">Full Name</label>
-            <input
+            <Input
               id="name"
-              className="input"
               name="name"
               placeholder="Alice Developer"
               value={form.name}
@@ -68,9 +68,8 @@ export default function SignupPage() {
 
           <div className="form-group">
             <label className="form-label" htmlFor="email">Email</label>
-            <input
+            <Input
               id="email"
-              className="input"
               type="email"
               name="email"
               placeholder="you@example.com"
@@ -82,9 +81,8 @@ export default function SignupPage() {
 
           <div className="form-group">
             <label className="form-label" htmlFor="password">Password</label>
-            <input
+            <Input
               id="password"
-              className="input"
               type="password"
               name="password"
               placeholder="At least 8 characters"
@@ -95,13 +93,15 @@ export default function SignupPage() {
             />
           </div>
 
-          <button
+          <Button
             type="submit"
-            className="btn btn-primary w-full"
+            variant="default"
+            className="w-full"
+            loading={loading}
             disabled={loading}
           >
-            {loading ? <><span className="spinner" /> Creating account…</> : 'Create account'}
-          </button>
+            {loading ? 'Creating account…' : 'Create account'}
+          </Button>
         </form>
 
         <p className="auth-footer">

@@ -15,6 +15,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { reactionService } from '../services/reactionService'
+import { Button } from './ui'
 import './ReactionButtons.css'
 
 const DEFAULT_REACTIONS = [
@@ -109,9 +110,10 @@ export default function ReactionButtons({ changelogId }) {
         {reactions.map((r) => {
           const isActive = r.user_reacted
           return (
-            <button
+            <Button
               key={r.reaction}
               type="button"
+              variant="ghost"
               className={`reaction-btn ${isActive ? 'active' : ''} ${
                 busyEmoji === r.reaction ? 'busy' : ''
               }`}
@@ -127,7 +129,7 @@ export default function ReactionButtons({ changelogId }) {
             >
               <span className="reaction-emoji">{r.reaction}</span>
               <span className="reaction-count">{r.count}</span>
-            </button>
+            </Button>
           )
         })}
       </div>

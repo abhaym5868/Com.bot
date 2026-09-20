@@ -15,12 +15,13 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { changelogService } from '../services/changelogService'
 import ReactionButtons from '../components/ReactionButtons'
+import { Badge, Button } from '../components/ui'
 import './ChangelogDetailPage.css'
 
 const CATEGORY_MAP = {
-  NEW: { label: '#New', cls: 'badge-new' },
-  IMPROVED: { label: '#Improved', cls: 'badge-improved' },
-  FIXED: { label: '#Fixed', cls: 'badge-fixed' },
+  NEW: { label: '#New', cls: 'badge-new', variant: 'default' },
+  IMPROVED: { label: '#Improved', cls: 'badge-improved', variant: 'secondary' },
+  FIXED: { label: '#Fixed', cls: 'badge-fixed', variant: 'outline' },
 }
 
 export default function ChangelogDetailPage() {
@@ -80,9 +81,9 @@ export default function ChangelogDetailPage() {
           <p className="detail-not-found-text">
             {error || 'This changelog entry does not exist or has not been published.'}
           </p>
-          <Link to="/" className="btn btn-primary">
+          <Button render={<Link to="/" />} variant="default">
             ← Back to Timeline
-          </Link>
+          </Button>
         </div>
       </div>
     )
@@ -100,14 +101,15 @@ export default function ChangelogDetailPage() {
   return (
     <article className="detail-page-container fade-in">
       <div className="detail-nav-back">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => navigate(-1)}
           className="detail-back-btn"
           aria-label="Back to previous page"
         >
           <span>←</span> Back to Updates
-        </button>
+        </Button>
       </div>
 
       {changelog.cover_image && (
@@ -125,16 +127,16 @@ export default function ChangelogDetailPage() {
 
       <header className="detail-header">
         <div className="detail-meta-row">
-          <span className={`badge ${catMeta.cls}`}>
+          <Badge variant={catMeta.variant} className={catMeta.cls}>
             {catMeta.label}
-          </span>
+          </Badge>
           <time className="detail-date" dateTime={changelog.published_at}>
             {dateStr}
           </time>
           {changelog.status === 'DRAFT' && (
-            <span className="detail-draft-pill">
+            <Badge variant="warning" className="detail-draft-pill">
               DRAFT
-            </span>
+            </Badge>
           )}
         </div>
 
@@ -151,9 +153,9 @@ export default function ChangelogDetailPage() {
 
       <footer className="detail-footer">
         <ReactionButtons changelogId={changelog.id} />
-        <Link to="/" className="btn btn-secondary btn-sm">
+        <Button variant="secondary" size="sm" render={<Link to="/" />}>
           ← All Product Updates
-        </Link>
+        </Button>
       </footer>
     </article>
   )

@@ -21,22 +21,23 @@ import remarkGfm from 'remark-gfm'
 import { changelogService } from '../services/changelogService'
 import { useDebounce } from '../hooks/useDebounce'
 import ReactionButtons from '../components/ReactionButtons'
+import { Badge, Button, Input } from '../components/ui'
 import './TimelinePage.css'
 
 const FILTER_TAGS = [
   { value: '', label: 'All' },
-  { value: 'NEW', label: '#New', badgeCls: 'badge-new' },
-  { value: 'IMPROVED', label: '#Improved', badgeCls: 'badge-improved' },
-  { value: 'FIXED', label: '#Fixed', badgeCls: 'badge-fixed' },
+  { value: 'NEW', label: '#New', badgeCls: 'badge-new', variant: 'default' },
+  { value: 'IMPROVED', label: '#Improved', badgeCls: 'badge-improved', variant: 'secondary' },
+  { value: 'FIXED', label: '#Fixed', badgeCls: 'badge-fixed', variant: 'outline' },
 ]
 
 function CategoryBadge({ category }) {
   const cat = category?.toUpperCase() || 'NEW'
   const tag = FILTER_TAGS.find((f) => f.value === cat)
   const label = tag ? tag.label : `#${category}`
-  const badgeCls = tag?.badgeCls || 'badge-new'
+  const variant = tag?.variant || 'default'
 
-  return <span className={`badge ${badgeCls}`}>{label}</span>
+  return <Badge variant={variant} className={`badge ${tag?.badgeCls || 'badge-new'}`}>{label}</Badge>
 }
 
 function ChangelogCard({ item }) {
@@ -217,7 +218,7 @@ export default function TimelinePage() {
           {/* Debounced Search Input */}
           <div className="timeline-search-wrapper">
             <span className="search-icon">🔍</span>
-            <input
+            <Input
               ref={searchInputRef}
               id="timeline-search-input"
               type="text"
@@ -228,28 +229,32 @@ export default function TimelinePage() {
               aria-label="Search changelogs"
             />
             {searchInput && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-sm"
                 className="search-clear-btn"
                 onClick={clearSearch}
                 title="Clear search"
               >
                 ✕
-              </button>
+              </Button>
             )}
           </div>
 
           {/* Filter Navigation: All, #New, #Improved, #Fixed */}
           <nav className="timeline-filters" aria-label="Filter updates by category">
             {FILTER_TAGS.map((tag) => (
-              <button
+              <Button
                 key={tag.value}
                 type="button"
+                variant={category === tag.value ? 'default' : 'secondary'}
+                size="sm"
                 className={`filter-btn ${category === tag.value ? 'active' : ''}`}
                 onClick={() => setCategory(tag.value)}
               >
                 {tag.label}
-              </button>
+              </Button>
             ))}
           </nav>
         </div>
@@ -261,14 +266,15 @@ export default function TimelinePage() {
               Search results for <strong>&ldquo;{debouncedSearch.trim()}&rdquo;</strong>
               {' '}({total} {total === 1 ? 'match' : 'matches'})
             </span>
-            <button
+            <Button
               type="button"
-              className="btn btn-ghost btn-sm"
+              variant="ghost"
+              size="sm"
               onClick={clearSearch}
               style={{ padding: '2px 8px', fontSize: '12px' }}
             >
               Reset
-            </button>
+            </Button>
           </div>
         )}
 
@@ -281,13 +287,14 @@ export default function TimelinePage() {
             <span className="error-icon">⚠️</span>
             <h3>Failed to load updates</h3>
             <p className="error-detail">{error}</p>
-            <button
+            <Button
               type="button"
-              className="btn btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               onClick={fetchTimeline}
             >
               🔄 Try Again
-            </button>
+            </Button>
           </div>
         )}
 
@@ -306,22 +313,24 @@ export default function TimelinePage() {
             {(debouncedSearch.trim() || category) && (
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                 {debouncedSearch.trim() && (
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-secondary btn-sm"
+                    variant="secondary"
+                    size="sm"
                     onClick={clearSearch}
                   >
                     Clear Search
-                  </button>
+                  </Button>
                 )}
                 {category && (
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-secondary btn-sm"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => setCategory('')}
                   >
                     Clear Category Filter
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -340,9 +349,10 @@ export default function TimelinePage() {
         {/* ── Pagination ── */}
         {!loading && !error && pages > 1 && (
           <nav className="pagination" aria-label="Timeline pagination">
-            <button
+            <Button
               type="button"
-              className="btn btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               disabled={page <= 1}
               onClick={() => {
                 setPage((p) => p - 1)
@@ -350,13 +360,14 @@ export default function TimelinePage() {
               }}
             >
               ← Newer
-            </button>
+            </Button>
             <span className="pagination-info">
               Page {page} of {pages} ({total} total)
             </span>
-            <button
+            <Button
               type="button"
-              className="btn btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               disabled={page >= pages}
               onClick={() => {
                 setPage((p) => p + 1)
@@ -364,7 +375,7 @@ export default function TimelinePage() {
               }}
             >
               Older →
-            </button>
+            </Button>
           </nav>
         )}
       </div>

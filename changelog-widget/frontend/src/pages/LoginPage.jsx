@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { Input, Button } from '../components/ui'
 import './AuthPages.css'
 
 export default function LoginPage() {
@@ -55,9 +56,8 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label className="form-label" htmlFor="email">Email</label>
-            <input
+            <Input
               id="email"
-              className="input"
               type="email"
               name="email"
               placeholder="you@example.com"
@@ -70,9 +70,8 @@ export default function LoginPage() {
 
           <div className="form-group">
             <label className="form-label" htmlFor="password">Password</label>
-            <input
+            <Input
               id="password"
-              className="input"
               type="password"
               name="password"
               placeholder="••••••••"
@@ -83,13 +82,15 @@ export default function LoginPage() {
             />
           </div>
 
-          <button
+          <Button
             type="submit"
-            className="btn btn-primary w-full"
+            variant="default"
+            className="w-full"
+            loading={loading}
             disabled={loading}
           >
-            {loading ? <><span className="spinner" /> Signing in…</> : 'Sign in'}
-          </button>
+            {loading ? 'Signing in…' : 'Sign in'}
+          </Button>
         </form>
 
         <p className="auth-footer">

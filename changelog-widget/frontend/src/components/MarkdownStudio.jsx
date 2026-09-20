@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import changelogService from '../services/changelogService'
+import { Button, Input, Select, Textarea, Badge } from '../components/ui'
 import './MarkdownStudio.css'
 
 const CATEGORIES = [
@@ -131,14 +132,15 @@ export default function MarkdownStudio({
       {/* Studio Header / Action Bar */}
       <div className="studio-navbar">
         <div className="studio-navbar-left">
-          <button
+          <Button
             type="button"
-            className="btn btn-ghost btn-sm"
+            variant="ghost"
+            size="sm"
             onClick={onCancel}
             title="Return to list"
           >
             ← Back
-          </button>
+          </Button>
           <div className="studio-title-block">
             <span className="studio-badge-mode">
               {initialData ? 'Editing Changelog' : 'New Changelog'}
@@ -150,46 +152,54 @@ export default function MarkdownStudio({
         </div>
 
         <div className="studio-view-toggle">
-          <button
+          <Button
             type="button"
+            variant={activeTab === 'split' ? 'default' : 'ghost'}
+            size="sm"
             className={`toggle-btn ${activeTab === 'split' ? 'active' : ''}`}
             onClick={() => setActiveTab('split')}
           >
             Split View
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant={activeTab === 'edit' ? 'default' : 'ghost'}
+            size="sm"
             className={`toggle-btn ${activeTab === 'edit' ? 'active' : ''}`}
             onClick={() => setActiveTab('edit')}
           >
             Editor Only
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant={activeTab === 'preview' ? 'default' : 'ghost'}
+            size="sm"
             className={`toggle-btn ${activeTab === 'preview' ? 'active' : ''}`}
             onClick={() => setActiveTab('preview')}
           >
             Preview Only
-          </button>
+          </Button>
         </div>
 
         <div className="studio-actions">
-          <button
+          <Button
             type="button"
-            className="btn btn-secondary btn-sm"
+            variant="secondary"
+            size="sm"
             onClick={handleSaveDraft}
             disabled={isSaving}
           >
             {isSaving ? 'Saving...' : 'Save Draft'}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="btn btn-primary btn-sm"
+            variant="default"
+            size="sm"
             onClick={handlePublish}
             disabled={isSaving}
           >
             {isSaving ? 'Publishing...' : 'Publish Update'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -201,10 +211,10 @@ export default function MarkdownStudio({
             <label className="field-label" htmlFor="studio-title">
               Update Title <span className="text-danger">*</span>
             </label>
-            <input
+            <Input
               id="studio-title"
               type="text"
-              className="input studio-input-title"
+              className="studio-input-title"
               placeholder="e.g., Lightning Fast Search & Filter 2.0"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -217,9 +227,8 @@ export default function MarkdownStudio({
               <label className="field-label" htmlFor="studio-category">
                 Category
               </label>
-              <select
+              <Select
                 id="studio-category"
-                className="select"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
@@ -228,7 +237,7 @@ export default function MarkdownStudio({
                     {c.label} ({c.value})
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             <div className="studio-field-group">
@@ -236,10 +245,9 @@ export default function MarkdownStudio({
                 Cover Image (Upload or URL)
               </label>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input
+                <Input
                   id="studio-cover"
                   type="text"
-                  className="input"
                   placeholder="https://... or click Upload"
                   value={coverImage}
                   onChange={(e) => setCoverImage(e.target.value)}
@@ -260,14 +268,16 @@ export default function MarkdownStudio({
                   />
                 </label>
                 {coverImage && (
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-ghost btn-sm text-danger"
+                    variant="ghost"
+                    size="sm"
+                    className="text-danger"
                     onClick={() => setCoverImage('')}
                     title="Remove cover image"
                   >
                     ✕
-                  </button>
+                  </Button>
                 )}
               </div>
               {uploadError && (
@@ -379,7 +389,7 @@ export default function MarkdownStudio({
           </div>
 
           <div className="studio-textarea-wrapper">
-            <textarea
+            <Textarea
               id="studio-markdown-editor"
               className="studio-markdown-textarea"
               placeholder="Write your release notes in Markdown..."
@@ -411,9 +421,24 @@ export default function MarkdownStudio({
             )}
 
             <div className="studio-preview-tags">
-              <span className={`badge ${category === 'NEW' ? 'badge-new' : category === 'IMPROVED' ? 'badge-improved' : 'badge-fixed'}`}>
+              <Badge
+                variant={
+                  category === 'NEW'
+                    ? 'default'
+                    : category === 'IMPROVED'
+                    ? 'secondary'
+                    : 'outline'
+                }
+                className={
+                  category === 'NEW'
+                    ? 'badge-new'
+                    : category === 'IMPROVED'
+                    ? 'badge-improved'
+                    : 'badge-fixed'
+                }
+              >
                 {category}
-              </span>
+              </Badge>
               <span className="preview-date">
                 {new Date().toLocaleDateString(undefined, {
                   month: 'short',

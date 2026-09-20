@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { changelogService } from '../services/changelogService'
 import MarkdownStudio from '../components/MarkdownStudio'
+import { Button, Input, Select, Badge, Card } from '../components/ui'
 import './AdminDashboardPage.css'
 
 export default function AdminDashboardPage() {
@@ -196,9 +197,9 @@ export default function AdminDashboardPage() {
               <span className="user-role">Role: {user?.role || 'admin'}</span>
             </div>
           </div>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={logout} title="Sign out">
+          <Button variant="ghost" size="sm" onClick={logout} title="Sign out">
             🚪 Logout
-          </button>
+          </Button>
         </div>
       </aside>
 
@@ -221,50 +222,54 @@ export default function AdminDashboardPage() {
             </p>
           </div>
           <div className="admin-header-actions">
-            <Link to="/" className="btn btn-secondary btn-sm" target="_blank" rel="noreferrer">
+            <Button
+              variant="secondary"
+              size="sm"
+              render={<Link to="/" target="_blank" rel="noreferrer" />}
+            >
               🌐 View Public Feed
-            </Link>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
               onClick={() => setStudioTarget('create')}
             >
               ✨ Create Update
-            </button>
+            </Button>
           </div>
         </header>
 
         {/* Admin KPI Stat Cards */}
         <div className="admin-stats-grid">
-          <div className="admin-stat-card">
+          <Card className="admin-stat-card">
             <div className="stat-icon-wrapper stat-icon-purple">📊</div>
             <div className="stat-content">
               <span className="stat-label">Total Updates</span>
               <strong className="stat-value">{total}</strong>
             </div>
-          </div>
-          <div className="admin-stat-card">
+          </Card>
+          <Card className="admin-stat-card">
             <div className="stat-icon-wrapper stat-icon-green">🚀</div>
             <div className="stat-content">
               <span className="stat-label">Published</span>
               <strong className="stat-value">{publishedCount}</strong>
             </div>
-          </div>
-          <div className="admin-stat-card">
+          </Card>
+          <Card className="admin-stat-card">
             <div className="stat-icon-wrapper stat-icon-amber">📝</div>
             <div className="stat-content">
               <span className="stat-label">Drafts</span>
               <strong className="stat-value">{draftCount}</strong>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Filters and Controls */}
         <div className="admin-controls-card">
           <div className="controls-search">
-            <input
+            <Input
               type="text"
-              className="input input-sm"
+              className="input-sm"
               placeholder="Search updates by title..."
               value={searchQuery}
               onChange={(e) => {
@@ -275,8 +280,8 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="controls-filters">
-            <select
-              className="select select-sm"
+            <Select
+              className="select-sm"
               value={categoryFilter}
               onChange={(e) => {
                 setCategoryFilter(e.target.value)
@@ -287,10 +292,10 @@ export default function AdminDashboardPage() {
               <option value="NEW">New Feature</option>
               <option value="IMPROVED">Improvement</option>
               <option value="FIXED">Bug Fix</option>
-            </select>
+            </Select>
 
-            <select
-              className="select select-sm"
+            <Select
+              className="select-sm"
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value)
@@ -300,12 +305,12 @@ export default function AdminDashboardPage() {
               <option value="">All Statuses</option>
               <option value="PUBLISHED">Published</option>
               <option value="DRAFT">Draft</option>
-            </select>
+            </Select>
           </div>
         </div>
 
         {/* Table / List */}
-        <div className="admin-table-wrapper card">
+        <Card className="admin-table-wrapper">
           {loading ? (
             <div className="admin-empty-state">
               <div className="spinner spinner-lg" style={{ marginBottom: '16px' }} />
@@ -316,9 +321,9 @@ export default function AdminDashboardPage() {
               <span className="empty-icon">⚠️</span>
               <h3 style={{ color: 'var(--color-danger)' }}>Failed to load</h3>
               <p style={{ color: 'var(--color-text-muted)', marginBottom: '16px', fontSize: '13px' }}>{error}</p>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={fetchChangelogs}>
+              <Button variant="secondary" size="sm" onClick={fetchChangelogs}>
                 Retry
-              </button>
+              </Button>
             </div>
           ) : changelogs.length === 0 ? (
             <div className="admin-empty-state">
@@ -329,13 +334,13 @@ export default function AdminDashboardPage() {
                   ? 'No updates match the selected filters.'
                   : 'Start by creating your first changelog entry.'}
               </p>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
+              <Button
+                variant="default"
+                size="sm"
                 onClick={() => setStudioTarget('create')}
               >
                 Create First Update
-              </button>
+              </Button>
             </div>
           ) : (
             <table className="admin-table">
@@ -358,18 +363,28 @@ export default function AdminDashboardPage() {
                       </div>
                     </td>
                     <td>
-                      <span className={`badge badge-${item.category.toLowerCase()}`}>
+                      <Badge
+                        variant={
+                          item.category === 'NEW'
+                            ? 'default'
+                            : item.category === 'IMPROVED'
+                            ? 'secondary'
+                            : 'outline'
+                        }
+                        className={`badge-${item.category.toLowerCase()}`}
+                      >
                         {item.category}
-                      </span>
+                      </Badge>
                     </td>
                     <td>
-                      <span
+                      <Badge
+                        variant={item.status === 'PUBLISHED' ? 'success' : 'warning'}
                         className={`status-pill ${
                           item.status === 'PUBLISHED' ? 'status-published' : 'status-draft'
                         }`}
                       >
                         {item.status}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="table-date-cell">
                       {item.published_at
@@ -383,31 +398,32 @@ export default function AdminDashboardPage() {
                     <td>
                       <div className="table-actions">
                         {item.status === 'DRAFT' && (
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-sm text-success"
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-success"
                             onClick={() => handlePublishClick(item)}
                             title="Publish this update"
                           >
                             🚀 Publish
-                          </button>
+                          </Button>
                         )}
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           onClick={() => setStudioTarget(item)}
                           title="Edit update"
                         >
                           ✏️ Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
                           onClick={() => handleDeleteClick(item)}
                           title="Delete update"
                         >
                           🗑️
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -423,26 +439,26 @@ export default function AdminDashboardPage() {
                 Page {page} of {pages} &mdash; {total} total update{total !== 1 ? 's' : ''}
               </span>
               <div className="admin-pagination-buttons">
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => p - 1)}
                 >
                   ← Prev
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
                   disabled={page >= pages}
                   onClick={() => setPage((p) => p + 1)}
                 >
                   Next →
-                </button>
+                </Button>
               </div>
             </div>
           )}
-        </div>
+        </Card>
       </main>
     </div>
   )
