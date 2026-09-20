@@ -15,6 +15,7 @@ Tests verified:
 """
 
 import asyncio
+import pytest
 from httpx import ASGITransport, AsyncClient
 from mongomock_motor import AsyncMongoMockClient
 
@@ -23,7 +24,8 @@ from app.config.database import get_database
 from app.models.indexes import create_database_indexes
 
 
-async def run_tests():
+@pytest.mark.asyncio
+async def test_public_feed_suite():
     print("🚀 Starting Public JSON Feed Integration Tests...\n")
 
     # ── Setup mock MongoDB ───────────────────────────────────────────────────
@@ -42,7 +44,8 @@ async def run_tests():
             json={"name": "Feed Admin", "email": "feedadmin@example.com", "password": "AdminPass123!"},
         )
         assert res.status_code == 201, f"Signup failed: {res.text}"
-        admin_token = res.json()["access_token"]
+        admin_token = res.cookies.get("access_token")
+        assert admin_token is not None
         admin_headers = {"Authorization": f"Bearer {admin_token}"}
 
         # ── Helper: create a changelog entry ─────────────────────────────────

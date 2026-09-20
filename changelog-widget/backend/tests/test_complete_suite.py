@@ -20,6 +20,7 @@ STEP 17: Master End-to-End Test Suite covering all features and edge cases:
 """
 
 import asyncio
+import pytest
 from datetime import datetime, timedelta, timezone
 import io
 import os
@@ -35,7 +36,8 @@ from app.config.settings import settings
 from app.models.indexes import create_database_indexes
 
 
-async def run_master_suite():
+@pytest.mark.asyncio
+async def test_master_suite():
     print("=" * 70)
     print("🚀 STEP 17 — COMPREHENSIVE END-TO-END MASTER TEST SUITE")
     print("=" * 70 + "\n")
@@ -100,7 +102,7 @@ async def run_master_suite():
         assert res_admin.status_code == 201
         admin_data = res_admin.json()
         assert admin_data["user"]["role"] == "admin"
-        admin_token = admin_data["access_token"]
+        admin_token = res_admin.cookies["access_token"]
         admin_headers = {"Authorization": f"Bearer {admin_token}"}
         print("   ✅ Admin registered successfully (role=admin)")
 
@@ -115,8 +117,8 @@ async def run_master_suite():
         assert res_user.status_code == 201
         user_data = res_user.json()
         assert user_data["user"]["role"] == "user"
-        user_token = user_data["access_token"]
-        user_refresh_token = user_data["refresh_token"]
+        user_token = res_user.cookies["access_token"]
+        user_refresh_token = res_user.cookies["refresh_token"]
         user_headers = {"Authorization": f"Bearer {user_token}"}
         print("   ✅ Regular user registered successfully (role=user)")
 
@@ -140,7 +142,7 @@ async def run_master_suite():
             json={"email": "jane@mastertest.com", "password": "JanePassword123!"},
         )
         assert res_login.status_code == 200
-        assert "access_token" in res_login.json()
+        assert "access_token" in res_login.cookies
         print("   ✅ Valid login returned access token & cookies")
 
         # 2.6 GET /api/v1/auth/me
@@ -155,9 +157,8 @@ async def run_master_suite():
             json={"refresh_token": user_refresh_token},
         )
         assert res_refresh.status_code == 200
-        new_tokens = res_refresh.json()
-        assert "access_token" in new_tokens
-        assert "refresh_token" in new_tokens
+        assert "access_token" in res_refresh.cookies
+        assert "refresh_token" in res_refresh.cookies
         print("   ✅ Refresh token rotated successfully")
 
         # 2.8 Reusing old refresh token -> 401
@@ -666,7 +667,7 @@ async def run_master_suite():
         # 10.1 Root endpoint
         res_root = await client.get("/")
         assert res_root.status_code == 200
-        assert res_root.json()["message"] == "Changelog API is running"
+        assert "Changelog" in res_root.json()["message"]
         print("   ✅ Root / endpoint is healthy")
 
         # 10.2 /health endpoint

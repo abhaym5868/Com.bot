@@ -44,7 +44,8 @@ async def test_widget_config_lifecycle():
             json={"name": "Widget Admin", "email": "widgetadmin@example.com", "password": "AdminPassword123!"}
         )
         assert admin_signup.status_code == 201
-        admin_token = admin_signup.json()["access_token"]
+        admin_token = admin_signup.cookies.get("access_token")
+        assert admin_token is not None
         headers = {"Authorization": f"Bearer {admin_token}"}
 
         # 4. PUT config as admin

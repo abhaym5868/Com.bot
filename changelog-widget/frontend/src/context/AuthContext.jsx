@@ -14,18 +14,12 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)  // true on first mount (checking session)
   const [error, setError] = useState(null)
 
-  // Attempt to restore session from existing cookie / localStorage token
+  // Attempt to restore session from existing httpOnly cookie
   const restoreSession = useCallback(async () => {
-    const storedToken = localStorage.getItem('access_token')
-    if (!storedToken) {
-      setLoading(false)
-      return
-    }
     try {
       const me = await authService.getMe()
       setUser(me)
     } catch {
-      localStorage.removeItem('access_token')
       setUser(null)
     } finally {
       setLoading(false)
@@ -52,11 +46,9 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      const token = localStorage.getItem('access_token')
-      await authService.logout(token)
+      await authService.logout()
     } finally {
       setUser(null)
-      localStorage.removeItem('access_token')
     }
   }
 

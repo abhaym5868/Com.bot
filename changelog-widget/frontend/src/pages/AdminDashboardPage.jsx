@@ -10,7 +10,6 @@
  */
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import { changelogService } from '../services/changelogService'
 import MarkdownStudio from '../components/MarkdownStudio'
 import AdminSidebar from '../components/AdminSidebar'
@@ -18,8 +17,6 @@ import { Button, Input, Select, Badge, Card } from '../components/ui'
 import './AdminDashboardPage.css'
 
 export default function AdminDashboardPage() {
-  const { user, logout } = useAuth()
-
   // State
   const [changelogs, setChangelogs] = useState([])
   const [total, setTotal] = useState(0)

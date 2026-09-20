@@ -11,6 +11,7 @@ End-to-end integration test for What's New Notification Center:
 """
 
 import asyncio
+import pytest
 from datetime import timedelta
 from httpx import ASGITransport, AsyncClient
 from mongomock_motor import AsyncMongoMockClient
@@ -21,7 +22,8 @@ from app.models.indexes import create_database_indexes
 from app.models.base import utc_now
 
 
-async def run_tests():
+@pytest.mark.asyncio
+async def test_notification_center():
     print("🚀 Starting What's New Notification Center Tests...\n")
 
     mock_client = AsyncMongoMockClient()
@@ -40,7 +42,8 @@ async def run_tests():
             json={"name": "Admin Boss", "email": "admin@notif.com", "password": "AdminPassword123!"},
         )
         assert res_admin.status_code == 201
-        admin_token = res_admin.json()["access_token"]
+        admin_token = res_admin.cookies.get("access_token")
+        assert admin_token is not None
         admin_headers = {"Authorization": f"Bearer {admin_token}"}
 
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
@@ -49,7 +52,8 @@ async def run_tests():
             json={"name": "Sarah Consumer", "email": "sarah@notif.com", "password": "SarahPassword123!"},
         )
         assert res_user.status_code == 201
-        user_token = res_user.json()["access_token"]
+        user_token = res_user.cookies.get("access_token")
+        assert user_token is not None
         user_headers = {"Authorization": f"Bearer {user_token}"}
 
     print("   ✅ Admin and Sarah created successfully.")

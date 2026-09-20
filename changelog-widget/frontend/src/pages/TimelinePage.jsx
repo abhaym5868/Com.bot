@@ -31,6 +31,19 @@ const FILTER_TAGS = [
   { value: 'FIXED', label: '#Fixed', badgeCls: 'badge-fixed', variant: 'outline' },
 ]
 
+const safeUrlTransform = (url) => {
+  if (!url) return ''
+  const trimmed = url.trim().toLowerCase()
+  if (
+    trimmed.startsWith('javascript:') ||
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('vbscript:')
+  ) {
+    return '#'
+  }
+  return url
+}
+
 function CategoryBadge({ category }) {
   const cat = category?.toUpperCase() || 'NEW'
   const tag = FILTER_TAGS.find((f) => f.value === cat)
@@ -101,7 +114,20 @@ function ChangelogCard({ item }) {
 
         {/* Rendered Markdown Content with Code Blocks & Formatting */}
         <div className="markdown-body timeline-card-content">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            urlTransform={safeUrlTransform}
+            components={{
+              a: ({ href, children, ...props }) => {
+                const safeHref = safeUrlTransform(href)
+                return (
+                  <a href={safeHref} target="_blank" rel="noopener noreferrer" {...props}>
+                    {children}
+                  </a>
+                )
+              },
+            }}
+          >
             {item.content_markdown || ''}
           </ReactMarkdown>
         </div>

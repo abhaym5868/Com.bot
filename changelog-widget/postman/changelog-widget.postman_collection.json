@@ -2,7 +2,7 @@
   "info": {
     "name": "Changelog Widget API",
     "_postman_id": "c6a1e948-2b81-4228-b0ec-a4e954c25983",
-    "description": "Complete Postman collection for Changelog Widget API including Authentication, Changelog Management, Reactions, Notifications, and Public JSON Feed.",
+    "description": "Complete Postman collection for Changelog Widget API including Authentication, Changelog Management, Reactions, Notifications, JSON & RSS Feeds, Widget Configuration, Analytics, and Media Uploads.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -22,7 +22,17 @@
       "type": "string"
     },
     {
+      "key": "csrf_token",
+      "value": "",
+      "type": "string"
+    },
+    {
       "key": "reset_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "verification_token",
       "value": "",
       "type": "string"
     },
@@ -45,8 +55,35 @@
   "item": [
     {
       "name": "Auth",
-      "description": "Authentication endpoints: registration, authentication, session renewal, and password reset flows.",
+      "description": "Authentication endpoints: registration, login, token refresh, CSRF token, email verification, and password reset flows.",
       "item": [
+        {
+          "name": "CSRF Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.csrf_token) {",
+                  "    pm.collectionVariables.set('csrf_token', jsonData.csrf_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/csrf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "csrf"]
+            },
+            "description": "Retrieves the double-submit CSRF token and sets the csrf_token cookie."
+          }
+        },
         {
           "name": "Signup",
           "event": [
@@ -54,12 +91,9 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData.access_token) {",
-                  "    pm.collectionVariables.set('access_token', jsonData.access_token);",
-                  "}",
-                  "if (jsonData.refresh_token) {",
-                  "    pm.collectionVariables.set('refresh_token', jsonData.refresh_token);",
+                  "var tokenHeader = pm.response.headers.get('X-Email-Verification-Token');",
+                  "if (tokenHeader) {",
+                  "    pm.collectionVariables.set('verification_token', tokenHeader);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -80,38 +114,36 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/signup",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "signup"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "signup"]
             },
-            "description": "Registers a new user account. First registered user in the database automatically receives the ADMIN role."
+            "description": "Registers a new user account. First registered user bootstraps as ADMIN. Tokens are set in httpOnly cookies."
+          }
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{verification_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/verify-email",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "verify-email"]
+            },
+            "description": "Verifies email address using verification token simulated in development header."
           }
         },
         {
           "name": "Login",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData.access_token) {",
-                  "    pm.collectionVariables.set('access_token', jsonData.access_token);",
-                  "}",
-                  "if (jsonData.refresh_token) {",
-                  "    pm.collectionVariables.set('refresh_token', jsonData.refresh_token);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
@@ -126,38 +158,27 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/login",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "login"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
             },
-            "description": "Authenticates user with email and password, returning JWT access and refresh tokens along with httpOnly cookies."
+            "description": "Authenticates credentials, sets httpOnly access_token (15m) and refresh_token (7d) cookies, and sets csrf_token cookie."
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "me"]
+            },
+            "description": "Returns current authenticated user profile using cookie session or Bearer token."
           }
         },
         {
           "name": "Refresh",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData.access_token) {",
-                  "    pm.collectionVariables.set('access_token', jsonData.access_token);",
-                  "}",
-                  "if (jsonData.refresh_token) {",
-                  "    pm.collectionVariables.set('refresh_token', jsonData.refresh_token);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
@@ -168,37 +189,18 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+              "raw": "{}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/refresh",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "refresh"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "refresh"]
             },
-            "description": "Rotates refresh token and issues a new access token. Previous refresh token is invalidated to prevent token reuse."
+            "description": "Performs refresh token rotation: reads httpOnly refresh cookie, invalidates old token, and issues a fresh token pair in cookies."
           }
         },
         {
           "name": "Logout",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.collectionVariables.set('access_token', '');",
-                  "pm.collectionVariables.set('refresh_token', '');"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
@@ -207,27 +209,20 @@
                 "value": "application/json"
               },
               {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+              "raw": "{}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/logout",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "logout"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "logout"]
             },
-            "description": "Revokes the active refresh token and clears authentication session cookies."
+            "description": "Revokes active refresh session in MongoDB and clears access_token, refresh_token, and csrf_token cookies."
           }
         },
         {
@@ -260,17 +255,10 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/forgot-password",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "forgot-password"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "forgot-password"]
             },
-            "description": "Initiates password recovery flow. In development mode, returns a simulation_token in JSON for testing."
+            "description": "Generates password reset simulation token. Generic message prevents email enumeration."
           }
         },
         {
@@ -289,24 +277,17 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/reset-password",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "reset-password"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "reset-password"]
             },
-            "description": "Completes password reset using verification token and replaces old password."
+            "description": "Validates reset token, updates password, and revokes all active refresh sessions."
           }
         }
       ]
     },
     {
       "name": "Changelog",
-      "description": "Changelog authoring, publishing, public discovery, and lifecycle management.",
+      "description": "Changelog endpoints: CRUD operations, publishing, pinning, filtering, and search.",
       "item": [
         {
           "name": "Create",
@@ -335,103 +316,52 @@
                 "value": "application/json"
               },
               {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"AI Assistant Integration v2.0\",\n  \"content_markdown\": \"# AI Assistant v2.0\\n\\nWe are excited to launch our brand new AI features:\\n- ⚡ Instant answers\\n- 🔍 Semantic code search\\n- 🛡️ Advanced security validation\\n\\n```python\\n# Quick example\\nresult = assistant.query('hello')\\n```\",\n  \"category\": \"NEW\",\n  \"cover_image\": \"https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe\",\n  \"status\": \"DRAFT\"\n}"
+              "raw": "{\n  \"title\": \"Dark Mode & Performance Upgrades v2.0\",\n  \"content_markdown\": \"### What's New in v2.0\\n\\n- Seamless dark mode theme\\n- Real-time notification drawer\\n- 50% faster query times\",\n  \"category\": \"NEW\",\n  \"status\": \"DRAFT\",\n  \"version\": \"v2.0.0\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/changelog",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "changelog"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "changelog"]
             },
-            "description": "Creates a new changelog post (Admin only). Auto-generates unique URL-friendly slug if not specified."
+            "description": "Creates a new changelog post (Admin only). Generates URL-friendly slug automatically."
           }
         },
         {
           "name": "List",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/changelog?page=1&limit=10&category=NEW&search=",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "changelog"
-              ],
+              "raw": "{{base_url}}/api/v1/changelog?page=1&limit=10&category=&search=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "changelog"],
               "query": [
-                {
-                  "key": "page",
-                  "value": "1",
-                  "description": "Page number (1-indexed)"
-                },
-                {
-                  "key": "limit",
-                  "value": "10",
-                  "description": "Entries per page"
-                },
-                {
-                  "key": "category",
-                  "value": "NEW",
-                  "description": "Filter by category: NEW | IMPROVED | FIXED"
-                },
-                {
-                  "key": "status",
-                  "value": "PUBLISHED",
-                  "disabled": true,
-                  "description": "Filter by status: DRAFT | PUBLISHED (Admin only)"
-                },
-                {
-                  "key": "search",
-                  "value": "",
-                  "description": "Keyword search across title and markdown content"
-                }
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "10"},
+                {"key": "category", "value": ""},
+                {"key": "search", "value": ""}
               ]
             },
-            "description": "Lists changelog entries sorted newest first. Public visitors strictly see PUBLISHED entries; admins can view drafts."
+            "description": "Paginated list of changelog posts. Public visitors see only PUBLISHED entries; authenticated admins see all statuses."
           }
         },
         {
           "name": "Detail",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/changelog/{{changelog_slug}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "changelog",
-                "{{changelog_slug}}"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "changelog", "{{changelog_slug}}"]
             },
-            "description": "Fetches a single changelog post by slug or MongoDB ObjectId. Drafts return 404 for unauthenticated visitors."
+            "description": "Fetches single changelog entry by slug or ID."
           }
         },
         {
@@ -444,27 +374,20 @@
                 "value": "application/json"
               },
               {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"AI Assistant Integration v2.1 (Performance Boost)\",\n  \"content_markdown\": \"# AI Assistant v2.1\\n\\n- 🚀 25% lower latency\\n- 🔒 Token refresh bug fixed\\n- 🎨 Dark mode timeline polish\",\n  \"category\": \"IMPROVED\"\n}"
+              "raw": "{\n  \"title\": \"Dark Mode & Performance Upgrades v2.0 (Updated)\",\n  \"content_markdown\": \"### What's New\\n\\n- Refined dark palette\\n- Fast widget embeds\",\n  \"category\": \"IMPROVED\",\n  \"status\": \"DRAFT\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/changelog/{{changelog_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "changelog",
-                "{{changelog_id}}"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "changelog", "{{changelog_id}}"]
             },
-            "description": "Updates an existing changelog post (Admin only)."
+            "description": "Updates an existing changelog entry (Admin only)."
           }
         },
         {
@@ -473,24 +396,52 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
               }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/changelog/{{changelog_id}}/publish",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "changelog",
-                "{{changelog_id}}",
-                "publish"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "changelog", "{{changelog_id}}", "publish"]
             },
-            "description": "Publishes a draft changelog entry, timestamps published_at, and broadcasts it to the public timeline and notification center."
+            "description": "Transitions a changelog status to PUBLISHED and sets published_at timestamp (Admin only)."
+          }
+        },
+        {
+          "name": "Pin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/changelog/{{changelog_id}}/pin",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "changelog", "{{changelog_id}}", "pin"]
+            },
+            "description": "Pins post to top of listings (Admin only)."
+          }
+        },
+        {
+          "name": "Unpin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/changelog/{{changelog_id}}/unpin",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "changelog", "{{changelog_id}}", "unpin"]
+            },
+            "description": "Unpins sticky changelog post (Admin only)."
           }
         },
         {
@@ -499,30 +450,23 @@
             "method": "DELETE",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
               }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/changelog/{{changelog_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "changelog",
-                "{{changelog_id}}"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "changelog", "{{changelog_id}}"]
             },
-            "description": "Permanently removes a changelog entry and cascades deletion to all associated user reactions (Admin only)."
+            "description": "Deletes changelog entry and cascades deletion of attached emoji reactions (Admin only)."
           }
         }
       ]
     },
     {
       "name": "Reactions",
-      "description": "Emoji reactions (❤️, 🎉, 🚀) on published changelog entries.",
+      "description": "User feedback emoji reaction endpoints.",
       "item": [
         {
           "name": "Add",
@@ -548,26 +492,33 @@
                 "value": "application/json"
               },
               {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"changelog_id\": \"{{changelog_id}}\",\n  \"reaction\": \"🚀\"\n}"
+              "raw": "{\n  \"changelog_id\": \"{{changelog_id}}\",\n  \"emoji\": \"🚀\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/reactions",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "reactions"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reactions"]
             },
-            "description": "Adds an emoji reaction (❤️, 🎉, 🚀) to a published changelog post. Duplicate reactions by the same user on the same post are blocked with 409 Conflict."
+            "description": "Adds reaction (❤️, 🎉, or 🚀) to changelog post. Enforces unique constraint per user per changelog."
+          }
+        },
+        {
+          "name": "Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reactions/changelog/{{changelog_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reactions", "changelog", "{{changelog_id}}"]
+            },
+            "description": "Retrieves aggregated reaction counts and current user's reaction state."
           }
         },
         {
@@ -576,60 +527,36 @@
             "method": "DELETE",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
               }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/reactions/{{reaction_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "reactions",
-                "{{reaction_id}}"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reactions", "{{reaction_id}}"]
             },
-            "description": "Removes a user's previously added reaction. Only the reacting user or an admin can delete the reaction."
+            "description": "Removes previously placed reaction."
           }
         }
       ]
     },
     {
       "name": "Notifications",
-      "description": "What's New notification badge and read state management.",
+      "description": "What's New in-app notification center endpoints.",
       "item": [
         {
-          "name": "Unread Count",
+          "name": "Unread Count & Recent",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/notifications?limit=5",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications"
-              ],
-              "query": [
-                {
-                  "key": "limit",
-                  "value": "5",
-                  "description": "Maximum recent updates to return in drawer"
-                }
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "notifications"],
+              "query": [{"key": "limit", "value": "5"}]
             },
-            "description": "Returns unread count (published updates after last_viewed_changelog_date) and recent published updates."
+            "description": "Returns unread count relative to user's last_viewed_changelog_date and recent update previews."
           }
         },
         {
@@ -638,61 +565,163 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
               }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/notifications/mark-read",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "mark-read"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "notifications", "mark-read"]
             },
-            "description": "Updates last_viewed_changelog_date to current timestamp, clearing the unread notification badge."
+            "description": "Updates user's last_viewed_changelog_date to current timestamp, resetting unread badge."
           }
         }
       ]
     },
     {
       "name": "Feed",
-      "description": "Public JSON feed for external syndication, embeds, and RSS-style consumers.",
+      "description": "Public syndication feeds for external consumers and RSS readers.",
       "item": [
         {
-          "name": "Public Feed",
+          "name": "JSON Feed",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/changelog/feed?page=1&limit=20",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "changelog",
-                "feed"
-              ],
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "changelog", "feed"],
               "query": [
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "20"}
+              ]
+            },
+            "description": "Public JSON feed of published updates with 5-minute Cache-Control header."
+          }
+        },
+        {
+          "name": "RSS 2.0 XML Feed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/changelog/rss",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "changelog", "rss"]
+            },
+            "description": "Valid RSS 2.0 XML syndication feed for standard RSS aggregators."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Widget",
+      "description": "Widget studio customization and persistent configuration.",
+      "item": [
+        {
+          "name": "Get Config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/widget/config",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "widget", "config"]
+            },
+            "description": "Retrieves the active embeddable widget studio configuration."
+          }
+        },
+        {
+          "name": "Update Config",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"widget_name\": \"What's New\",\n  \"launcher_text\": \"What's New\",\n  \"launcher_style\": \"pill\",\n  \"launcher_size\": \"md\",\n  \"icon\": \"sparkles\",\n  \"position\": \"bottom-right\",\n  \"offset_x\": 24,\n  \"offset_y\": 24,\n  \"theme\": \"system\",\n  \"accent_color\": \"#4F6EF7\",\n  \"border_radius\": 12,\n  \"shadow\": \"elevated\",\n  \"animation\": \"slide\",\n  \"show_badge\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/widget/config",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "widget", "config"]
+            },
+            "description": "Updates widget studio settings (Admin only)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "description": "Anonymous view tracking and dashboard metrics.",
+      "item": [
+        {
+          "name": "Dashboard Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "dashboard"]
+            },
+            "description": "Retrieves aggregate analytics: views, reactions, breakdowns, and top posts (Admin only)."
+          }
+        },
+        {
+          "name": "Record View Event",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/view/{{changelog_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "view", "{{changelog_id}}"]
+            },
+            "description": "Public anonymous view event recording beacon."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload",
+      "description": "Media assets and image uploads.",
+      "item": [
+        {
+          "name": "Image Upload",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
                 {
-                  "key": "page",
-                  "value": "1",
-                  "description": "Page number"
-                },
-                {
-                  "key": "limit",
-                  "value": "20",
-                  "description": "Updates per page (max 100)"
+                  "key": "file",
+                  "type": "file",
+                  "description": "Image file (JPEG, PNG, WebP, GIF, up to 5MB)"
                 }
               ]
             },
-            "description": "Public, unauthenticated JSON feed of published changelogs sorted newest first with 5-minute Cache-Control header."
+            "url": {
+              "raw": "{{base_url}}/api/v1/upload/image",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "upload", "image"]
+            },
+            "description": "Uploads and validates image asset for cover or markdown insertion (Admin only)."
           }
         }
       ]

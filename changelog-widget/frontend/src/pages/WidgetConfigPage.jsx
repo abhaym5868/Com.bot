@@ -11,7 +11,7 @@
 import { useState, useEffect } from 'react'
 import AdminSidebar from '../components/AdminSidebar'
 import { widgetService } from '../services/widgetService'
-import { Card, Button, Input, Select, Badge } from '../components/ui'
+import { Button, Input, Select, Badge } from '../components/ui'
 import './AdminDashboardPage.css'
 import './WidgetStudio.css'
 

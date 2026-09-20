@@ -458,13 +458,14 @@ Interactive Swagger documentation is available at `http://localhost:8000/docs` a
 |---|---|---|---|
 | `GET` | `/` | Public | API root health confirmation. |
 | `GET` | `/health` | Public | System and MongoDB connection diagnostics. |
-| `POST` | `/api/v1/auth/signup` | Public | Register user. First registered user bootstraps as `admin`. |
-| `POST` | `/api/v1/auth/login` | Public | Authenticates user; returns JWT and sets httpOnly cookies. |
+| `POST` | `/api/v1/auth/signup` | Public | Register user. First registered user bootstraps as `admin`. Returns user profile; tokens transported via httpOnly cookies. |
+| `POST` | `/api/v1/auth/login` | Public | Authenticates credentials; returns user profile and sets secure httpOnly cookies. |
+| `POST` | `/api/v1/auth/refresh` | Public | Reads httpOnly refresh cookie, revokes old token, and issues fresh rotated token cookies. |
+| `POST` | `/api/v1/auth/logout` | Authenticated | Revokes active refresh token in database and clears all cookies. |
+| `GET` | `/api/v1/auth/csrf` | Public | Generates/retrieves CSRF double-submit token and sets `csrf_token` cookie. |
 | `GET` | `/api/v1/auth/me` | Authenticated | Profile of currently authenticated user. |
-| `POST` | `/api/v1/auth/refresh` | Public | Rotates refresh token and issues a new access token. |
-| `POST` | `/api/v1/auth/logout` | Authenticated | Invalidates session and clears cookies. |
-| `POST` | `/api/v1/auth/forgot-password` | Public | Initiates password recovery. |
-| `POST` | `/api/v1/auth/reset-password` | Public | Completes password reset using verification token. |
+| `POST` | `/api/v1/auth/forgot-password` | Public | Initiates password recovery (generic response prevents email enumeration). |
+| `POST` | `/api/v1/auth/reset-password` | Public | Completes password reset using token and revokes active sessions. |
 | `GET` | `/api/v1/changelog` | Public | Paginated list of published updates (admins see all). |
 | `POST` | `/api/v1/changelog` | **Admin Only** | Creates a new changelog post (DRAFT, SCHEDULED, or PUBLISHED). |
 | `GET` | `/api/v1/changelog/{slug}` | Public | Retrieves update by slug or ID. |
@@ -491,6 +492,8 @@ Interactive Swagger documentation is available at `http://localhost:8000/docs` a
 
 ## 10. Authentication Architecture
 
+The platform implements a hardened, zero-trust authentication architecture designed specifically to prevent Cross-Site Scripting (XSS) credential theft and Cross-Site Request Forgery (CSRF).
+
 ```
 ┌──────────────┐                                       ┌─────────────────────────┐
 │ Client (SPA) │                                       │ FastAPI Auth Middleware │
@@ -499,25 +502,35 @@ Interactive Swagger documentation is available at `http://localhost:8000/docs` a
        │ 1. POST /api/v1/auth/login { email, password }             │
        ├───────────────────────────────────────────────────────────>│
        │                                                            │ 2. Validate bcrypt hash
-       │                                                            │ 3. Generate Access Token (15m)
-       │                                                            │ 4. Generate Refresh Token (7d)
-       │                                                            │ 5. Save hashed token in DB
-       │ 6. Return tokens + Set-Cookie (httpOnly, samesite="lax")   │
+       │                                                            │ 3. Generate Access Token (15m, httpOnly cookie)
+       │                                                            │ 4. Generate Refresh Token (7d, httpOnly cookie)
+       │                                                            │ 5. Generate CSRF Token (readable cookie)
+       │ 6. Response: { "user": { ... } } + Set-Cookies             │
        │<───────────────────────────────────────────────────────────┤
        │                                                            │
-       │ 7. Protected Request (Header: "Bearer <token>" OR Cookie)  │
+       │ 7. State-Changing Request (POST/PUT/DELETE)                │
+       │    Headers: X-CSRF-Token: <token>                          │
+       │    Cookies: access_token=<jwt>, csrf_token=<token>         │
        ├───────────────────────────────────────────────────────────>│
-       │                                                            │ 8. Verify HS256 signature
-       │                                                            │ 9. Validate expiration & user
+       │                                                            │ 8. Validate Double-Submit CSRF
+       │                                                            │ 9. Verify JWT HS256 signature & RBAC
        │ 10. HTTP 200 Response                                      │
        │<───────────────────────────────────────────────────────────┤
 ```
 
 ### Key Security Safeguards
-1. **Short-Lived Access Tokens**: Signed with HS256, carrying a 15-minute expiration window to limit token interception risk.
-2. **Rotating Refresh Tokens**: Single-use refresh tokens stored hashed in MongoDB. Exchanging a refresh token generates a new pair and revokes the predecessor.
-3. **Dual Transport Authentication**: Compatible with both `Authorization: Bearer <token>` (for mobile and programmatic API requests) and `httpOnly`, `samesite="lax"` cookies (for secure web browsers).
-4. **RBAC Dependency Injection**: Admin routes enforce `get_current_admin_user`, rejecting non-admin attempts with HTTP 403 Forbidden.
+1. **Zero Frontend Token Storage**: Neither `access_token` nor `refresh_token` are stored in `localStorage` or `sessionStorage`. Tokens are NEVER exposed in login or signup JSON responses; responses strictly return `{ "user": { ... } }`.
+2. **Strict httpOnly Cookie Transport**:
+   - `access_token`: 15-minute expiry, `httpOnly`, `SameSite=Lax`, `Secure` in production.
+   - `refresh_token`: 7-day expiry, `httpOnly`, `SameSite=Lax`, `Secure` in production.
+3. **Double-Submit CSRF Protection**:
+   - The server issues a cryptographically secure `csrf_token` in a readable cookie.
+   - The frontend Axios interceptor reads this cookie and attaches the `X-CSRF-Token` header for state-changing HTTP methods (`POST`, `PUT`, `PATCH`, `DELETE`).
+   - The backend validates matching tokens on all cookie-authenticated state changes. Safe methods (`GET`, `HEAD`, `OPTIONS`) and direct `Authorization: Bearer` API clients are exempt.
+4. **Rotating Refresh Tokens**: Single-use refresh tokens stored hashed in MongoDB. Exchanging a refresh token generates a new pair and revokes the predecessor.
+5. **Password Complexity & Session Invalidation**: Enforces minimum 8 characters with mixed-case, numbers, and special characters. Password resets revoke all active sessions immediately.
+6. **Anti-Enumeration Protection**: The forgot-password endpoint returns a generic confirmation message regardless of whether an email exists.
+7. **RBAC Dependency Injection**: Admin routes enforce `get_current_admin_user`, rejecting non-admin attempts with HTTP 403 Forbidden.
 
 ---
 
@@ -526,52 +539,56 @@ Interactive Swagger documentation is available at `http://localhost:8000/docs` a
 ### Root Configuration (`.env.example`)
 Located at the root of the repository:
 ```env
-# Backend Configuration: Copy backend/.env.example to backend/.env
-# Frontend Configuration: Copy frontend/.env.example to frontend/.env
+# Backend Configuration: Copy changelog-widget/backend/.env.example to changelog-widget/backend/.env
+# Frontend Configuration: Copy changelog-widget/frontend/.env.example to changelog-widget/frontend/.env
 ```
 
-### Backend Configuration (`backend/.env`)
+### Backend Configuration (`changelog-widget/backend/.env`)
 | Variable | Type | Default | Description |
 |---|---|---|---|
 | `ENVIRONMENT` | string | `development` | Runtime mode: `development`, `staging`, or `production`. |
 | `MONGO_URI` | string | *Required* | MongoDB connection string (Local or MongoDB Atlas). |
 | `DATABASE_NAME` | string | `changelog_db` | Database name in MongoDB. |
-| `JWT_SECRET_KEY` | string | *Dev default* | Signing key for HS256 JWTs (min 32 chars in production). |
+| `JWT_SECRET_KEY` | string | `<GENERATE_A_RANDOM_SECRET>` | Signing key for HS256 JWTs (generate with `python -c "import secrets; print(secrets.token_urlsafe(32))"`). |
 | `JWT_ALGORITHM` | string | `HS256` | JWT signature algorithm. |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | int | `15` | Access token lifespan in minutes. |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | int | `7` | Refresh token lifespan in days. |
+| `COOKIE_SECURE` | bool | `false` | Set to `true` in production to enforce HTTPS cookies. |
+| `COOKIE_SAMESITE` | string | `lax` | Cookie SameSite policy: `lax`, `strict`, or `none`. |
 | `FRONTEND_URL` | string | `http://localhost:5173` | Allowed frontend origin for CORS. |
 | `CORS_ORIGINS` | string | `""` | Comma-separated list of additional allowed CORS origins. |
-| `ADMIN_EMAILS` | string | `""` | Comma-separated list of emails auto-promoted to admin in production. |
 | `UPLOAD_DIR` | string | `uploads` | Directory for uploaded media assets. |
 | `MAX_UPLOAD_SIZE_MB` | int | `5` | Maximum upload file size limit in megabytes. |
 
-### Frontend Configuration (`frontend/.env`)
+### Frontend Configuration (`changelog-widget/frontend/.env`)
 | Variable | Type | Default | Description |
 |---|---|---|---|
 | `VITE_API_BASE_URL` | string | `http://127.0.0.1:8000` | Target URL of the backend FastAPI service. |
 
 ---
 
-## 12. Installation
+## 12. Installation & Quick Start
 
 ### Prerequisites
-- **Python**: Version 3.11 or higher.
+- **Python**: Version 3.10 or higher.
 - **Node.js**: Version 18.x or higher with `npm`.
 - **MongoDB**: Local MongoDB instance or free [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cluster URI.
 
 ### Clone the Repository
 ```bash
-git clone https://github.com/<YOUR_USERNAME>/<YOUR_REPOSITORY>.git
-cd <YOUR_REPOSITORY>
+git clone https://github.com/abhaym5868/Com.bot.git
+cd Com.bot
+cd changelog-widget
 ```
 
 ---
 
 ## 13. Backend Setup
 
+From the `changelog-widget` directory:
+
 ```bash
-cd changelog-widget/backend
+cd backend
 
 # 1. Create Python virtual environment
 python3 -m venv venv
@@ -585,6 +602,7 @@ pip install -r requirements.txt
 # 4. Configure environment file
 cp .env.example .env
 # Edit .env and verify MONGO_URI is configured
+# Generate a secret: python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 # 5. Start development server
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
@@ -598,10 +616,10 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 ## 14. Frontend Setup
 
-In a separate terminal:
+In a separate terminal, from the `changelog-widget` directory:
 
 ```bash
-cd changelog-widget/frontend
+cd frontend
 
 # 1. Install dependencies
 npm install

@@ -1,10 +1,48 @@
 """
 utils/password.py
 -----------------
-Password hashing and verification utilities using direct bcrypt.
+Password hashing, verification, and complexity validation utilities using direct bcrypt.
 """
 
+import re
 import bcrypt
+from fastapi import HTTPException, status
+
+
+def validate_password_complexity(password: str) -> None:
+    """
+    Validate password complexity:
+    - At least 8 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one digit
+    - At least one special character
+    """
+    if len(password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long.",
+        )
+    if not re.search(r"[A-Z]", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one uppercase letter.",
+        )
+    if not re.search(r"[a-z]", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one lowercase letter.",
+        )
+    if not re.search(r"[0-9]", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one digit.",
+        )
+    if not re.search(r"[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/]", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one special character.",
+        )
 
 
 def hash_password(password: str) -> str:

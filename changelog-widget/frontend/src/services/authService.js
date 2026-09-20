@@ -8,26 +8,17 @@ import api from './api'
 export const authService = {
   async signup(name, email, password) {
     const res = await api.post('/api/v1/auth/signup', { name, email, password })
-    if (res.data.access_token) {
-      localStorage.setItem('access_token', res.data.access_token)
-    }
     return res.data
   },
 
   async login(email, password) {
     const res = await api.post('/api/v1/auth/login', { email, password })
-    if (res.data.access_token) {
-      localStorage.setItem('access_token', res.data.access_token)
-    }
     return res.data
   },
 
-  async logout(refreshToken) {
-    try {
-      await api.post('/api/v1/auth/logout', { refresh_token: refreshToken })
-    } finally {
-      localStorage.removeItem('access_token')
-    }
+  async logout() {
+    const res = await api.post('/api/v1/auth/logout')
+    return res.data
   },
 
   async getMe() {
@@ -35,11 +26,13 @@ export const authService = {
     return res.data
   },
 
-  async refresh(refreshToken) {
-    const res = await api.post('/api/v1/auth/refresh', { refresh_token: refreshToken })
-    if (res.data.access_token) {
-      localStorage.setItem('access_token', res.data.access_token)
-    }
+  async refresh() {
+    const res = await api.post('/api/v1/auth/refresh')
+    return res.data
+  },
+
+  async getCsrf() {
+    const res = await api.get('/api/v1/auth/csrf')
     return res.data
   },
 

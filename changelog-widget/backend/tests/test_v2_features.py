@@ -10,6 +10,7 @@ Integration tests for v2 features:
 """
 
 import asyncio
+import pytest
 from datetime import datetime, timezone, timedelta
 from httpx import ASGITransport, AsyncClient
 from mongomock_motor import AsyncMongoMockClient
@@ -20,7 +21,8 @@ from app.models.indexes import create_database_indexes
 from app.services.changelog_service import auto_publish_scheduled
 
 
-async def run_v2_tests():
+@pytest.mark.asyncio
+async def test_v2_features():
     print("🚀 Starting Changelog v2 Feature Integration Tests...\n")
 
     mock_client = AsyncMongoMockClient()
@@ -38,7 +40,8 @@ async def run_v2_tests():
             json={"name": "Admin Boss", "email": "admin@v2.com", "password": "AdminPassword123!"},
         )
         assert res_admin.status_code == 201
-        admin_token = res_admin.json()["access_token"]
+        admin_token = res_admin.cookies.get("access_token")
+        assert admin_token is not None
         headers = {"Authorization": f"Bearer {admin_token}"}
         print("   ✅ Admin created successfully.")
 

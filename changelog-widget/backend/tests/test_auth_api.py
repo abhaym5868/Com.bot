@@ -5,6 +5,7 @@ End-to-end integration test suite for authentication endpoints using mongomock-m
 """
 
 import asyncio
+import pytest
 from httpx import ASGITransport, AsyncClient
 from mongomock_motor import AsyncMongoMockClient
 
@@ -13,7 +14,8 @@ from app.config.database import get_database
 from app.models.indexes import create_database_indexes
 
 
-async def run_tests():
+@pytest.mark.asyncio
+async def test_auth_flow():
     print("🚀 Starting Authentication Integration Tests...\n")
 
     # 1. Setup mock MongoDB
@@ -46,9 +48,10 @@ async def run_tests():
         assert res_admin.status_code == 201, f"Admin signup failed: {res_admin.text}"
         admin_data = res_admin.json()
         assert admin_data["user"]["role"] == "admin"
-        assert "access_token" in admin_data
-        assert "refresh_token" in admin_data
-        admin_token = admin_data["access_token"]
+        assert "access_token" in res_admin.cookies
+        assert "refresh_token" in res_admin.cookies
+        assert "csrf_token" in res_admin.cookies
+        admin_token = res_admin.cookies["access_token"]
         print("   ✅ First user registered as ADMIN successfully.")
 
         res_user = await client.post("/api/v1/auth/signup", json=signup_payload)
@@ -59,12 +62,10 @@ async def run_tests():
         assert user_data["user"]["email_verified"] is False
         verification_token = res_user.headers.get("x-email-verification-token")
         assert verification_token is not None, "Verification token missing in headers"
-        user_access_token = user_data["access_token"]
-        user_refresh_token = user_data["refresh_token"]
-
-        # Check cookies
         assert "access_token" in res_user.cookies
         assert "refresh_token" in res_user.cookies
+        user_access_token = res_user.cookies["access_token"]
+        user_refresh_token = res_user.cookies["refresh_token"]
         print("   ✅ Regular user registered successfully with httpOnly cookies.")
 
         # ── Test 2: Duplicate Signup (409 Conflict) ──────────────────────────
@@ -97,9 +98,11 @@ async def run_tests():
         )
         assert res_login.status_code == 200
         login_data = res_login.json()
-        user_access_token = login_data["access_token"]
-        user_refresh_token = login_data["refresh_token"]
+        assert "user" in login_data
         assert "access_token" in res_login.cookies
+        assert "refresh_token" in res_login.cookies
+        user_access_token = res_login.cookies["access_token"]
+        user_refresh_token = res_login.cookies["refresh_token"]
         print("   ✅ Valid login succeeded; cookies and tokens returned.")
 
         # ── Test 5: GET /api/v1/auth/me ──────────────────────────────────────
@@ -129,8 +132,11 @@ async def run_tests():
         )
         assert res_refresh.status_code == 200
         refresh_data = res_refresh.json()
-        new_access = refresh_data["access_token"]
-        new_refresh = refresh_data["refresh_token"]
+        assert "user" in refresh_data
+        assert "access_token" in res_refresh.cookies
+        assert "refresh_token" in res_refresh.cookies
+        new_access = res_refresh.cookies["access_token"]
+        new_refresh = res_refresh.cookies["refresh_token"]
         assert new_refresh != user_refresh_token, "Refresh token was not rotated!"
         print("   ✅ Token rotated: new access + refresh token pair issued.")
 
@@ -195,10 +201,13 @@ async def run_tests():
 
         # ── Test 9: Logout ───────────────────────────────────────────────────
         print("9️⃣ Testing POST /api/v1/auth/logout...")
-        active_refresh = res_new_login.json()["refresh_token"]
+        active_refresh = res_new_login.cookies.get("refresh_token")
+        csrf_tok = res_new_login.cookies.get("csrf_token") or res_admin.cookies.get("csrf_token")
+        logout_headers = {"X-CSRF-Token": csrf_tok} if csrf_tok else {}
         res_logout = await client.post(
             "/api/v1/auth/logout",
             json={"refresh_token": active_refresh},
+            headers=logout_headers,
         )
         assert res_logout.status_code == 200
         # Check deleted cookies

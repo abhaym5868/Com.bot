@@ -14,12 +14,15 @@ export default function NotificationCenter() {
 
   // Fetch unread count & recent updates
   const fetchNotifications = useCallback(async () => {
+    setLoading(true)
     try {
       const data = await notificationService.getNotifications(6)
       setUnreadCount(data.unread_count || 0)
       setRecentUpdates(data.recent_updates || [])
     } catch {
       // Graceful fallback
+    } finally {
+      setLoading(false)
     }
   }, [])
 
@@ -88,7 +91,13 @@ export default function NotificationCenter() {
           </SheetHeader>
 
           <SheetBody>
-            {recentUpdates.length === 0 ? (
+            {loading && recentUpdates.length === 0 ? (
+              <div className="notif-empty-state">
+                <span className="notif-empty-icon">⏳</span>
+                <h3>Loading...</h3>
+                <p>Fetching the latest product updates for you.</p>
+              </div>
+            ) : recentUpdates.length === 0 ? (
               <div className="notif-empty-state">
                 <span className="notif-empty-icon">🎉</span>
                 <h3>You&apos;re all caught up!</h3>

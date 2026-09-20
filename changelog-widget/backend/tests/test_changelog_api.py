@@ -6,6 +6,7 @@ slug collision avoidance, public vs admin visibility, and filtering.
 """
 
 import asyncio
+import pytest
 from httpx import ASGITransport, AsyncClient
 from mongomock_motor import AsyncMongoMockClient
 
@@ -14,7 +15,8 @@ from app.config.database import get_database
 from app.models.indexes import create_database_indexes
 
 
-async def run_tests():
+@pytest.mark.asyncio
+async def test_changelog_management():
     print("🚀 Starting Changelog Management Integration Tests...\n")
 
     # Setup mock MongoDB
@@ -36,7 +38,8 @@ async def run_tests():
             json={"name": "Admin Boss", "email": "admin@example.com", "password": "AdminPassword123!"},
         )
         assert res_admin.status_code == 201
-        admin_token = res_admin.json()["access_token"]
+        admin_token = res_admin.cookies.get("access_token")
+        assert admin_token is not None
 
         # Second signup is regular user
         res_user = await client.post(
@@ -44,7 +47,8 @@ async def run_tests():
             json={"name": "Regular Joe", "email": "joe@example.com", "password": "UserPassword123!"},
         )
         assert res_user.status_code == 201
-        user_token = res_user.json()["access_token"]
+        user_token = res_user.cookies.get("access_token")
+        assert user_token is not None
         print("   ✅ Accounts created successfully.")
 
         # ── 2. RBAC: Non-Admins Cannot Modify Changelogs ──────────────────────

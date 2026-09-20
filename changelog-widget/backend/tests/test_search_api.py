@@ -9,6 +9,7 @@ Integration test suite for search functionality across title and content_markdow
 """
 
 import asyncio
+import pytest
 from httpx import ASGITransport, AsyncClient
 from mongomock_motor import AsyncMongoMockClient
 
@@ -17,7 +18,8 @@ from app.config.database import get_database
 from app.models.indexes import create_database_indexes
 
 
-async def run_tests():
+@pytest.mark.asyncio
+async def test_search_features():
     print("🚀 Starting Search Integration Tests...\n")
 
     mock_client = AsyncMongoMockClient()
@@ -35,7 +37,8 @@ async def run_tests():
             json={"name": "Admin Tester", "email": "search_admin@example.com", "password": "AdminPassword123!"},
         )
         assert res_admin.status_code == 201
-        admin_token = res_admin.json()["access_token"]
+        admin_token = res_admin.cookies.get("access_token")
+        assert admin_token is not None
         headers = {"Authorization": f"Bearer {admin_token}"}
         print("   ✅ Admin created successfully.")
 

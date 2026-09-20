@@ -8,6 +8,7 @@ and static file serving (/static/uploads/{filename}).
 import io
 import os
 import shutil
+import pytest
 from httpx import ASGITransport, AsyncClient
 from mongomock_motor import AsyncMongoMockClient
 
@@ -17,7 +18,8 @@ from app.config.settings import settings
 from app.models.indexes import create_database_indexes
 
 
-async def run_tests():
+@pytest.mark.asyncio
+async def test_upload_suite():
     print("🚀 Starting Image Upload Integration Tests...\n")
 
     # 1. Setup mock MongoDB
@@ -40,7 +42,8 @@ async def run_tests():
                 json={"name": "Admin", "email": "admin@upload.com", "password": "Password123!"},
             )
             assert res_admin.status_code == 201
-            admin_token = res_admin.json()["access_token"]
+            admin_token = res_admin.cookies.get("access_token")
+            assert admin_token is not None
             admin_headers = {"Authorization": f"Bearer {admin_token}"}
 
             res_user = await client.post(
@@ -48,7 +51,8 @@ async def run_tests():
                 json={"name": "User", "email": "user@upload.com", "password": "Password123!"},
             )
             assert res_user.status_code == 201
-            user_token = res_user.json()["access_token"]
+            user_token = res_user.cookies.get("access_token")
+            assert user_token is not None
             user_headers = {"Authorization": f"Bearer {user_token}"}
             print("   ✅ Users created.")
 

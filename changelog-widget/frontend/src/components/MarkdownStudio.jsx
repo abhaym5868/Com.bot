@@ -18,6 +18,19 @@ const CATEGORIES = [
   { value: 'FIXED', label: 'Bug Fix', badgeClass: 'badge-fixed' },
 ]
 
+export const safeUrlTransform = (url) => {
+  if (!url) return ''
+  const trimmed = url.trim().toLowerCase()
+  if (
+    trimmed.startsWith('javascript:') ||
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('vbscript:')
+  ) {
+    return '#'
+  }
+  return url
+}
+
 export default function MarkdownStudio({
   initialData = null,
   onSave,
@@ -43,6 +56,25 @@ export default function MarkdownStudio({
   const [isUploadingCover, setIsUploadingCover] = useState(false)
   const [isUploadingInline, setIsUploadingInline] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [saveStatus, setSaveStatus] = useState('saved') // 'saved' | 'saving' | 'unsaved'
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+
+  // Track changes for autosave indicator
+  useEffect(() => {
+    if (isInitialLoad) {
+      setIsInitialLoad(false)
+      return
+    }
+    setSaveStatus('unsaved')
+  }, [title, category, version, status, scheduledFor, coverImage, contentMarkdown])
+
+  useEffect(() => {
+    if (isSaving) {
+      setSaveStatus('saving')
+    } else if (!isInitialLoad) {
+      setSaveStatus('saved')
+    }
+  }, [isSaving])
 
   const handleCoverFileChange = async (e) => {
     const file = e.target.files?.[0]
@@ -212,7 +244,40 @@ export default function MarkdownStudio({
           </Button>
         </div>
 
-        <div className="studio-navbar-actions">
+        <div className="studio-navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div
+            className="studio-autosave-indicator"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.78rem',
+              padding: '4px 10px',
+              borderRadius: '999px',
+              background: 'var(--color-bg-subtle, rgba(255,255,255,0.05))',
+              border: '1px solid var(--color-border)',
+            }}
+          >
+            {saveStatus === 'saving' && (
+              <>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }} />
+                <span style={{ color: 'var(--color-text-muted)' }}>Saving...</span>
+              </>
+            )}
+            {saveStatus === 'saved' && (
+              <>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
+                <span style={{ color: 'var(--color-text-muted)' }}>Saved</span>
+              </>
+            )}
+            {saveStatus === 'unsaved' && (
+              <>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }} />
+                <span style={{ color: 'var(--color-text-muted)' }}>Unsaved changes</span>
+              </>
+            )}
+          </div>
+
           <Button
             type="button"
             variant="secondary"
@@ -565,7 +630,20 @@ export default function MarkdownStudio({
             </h1>
 
             <div className="markdown-body preview-markdown">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                urlTransform={safeUrlTransform}
+                components={{
+                  a: ({ href, children, ...props }) => {
+                    const safeHref = safeUrlTransform(href)
+                    return (
+                      <a href={safeHref} target="_blank" rel="noopener noreferrer" {...props}>
+                        {children}
+                      </a>
+                    )
+                  },
+                }}
+              >
                 {contentMarkdown || '*No content yet.*'}
               </ReactMarkdown>
             </div>

@@ -8,7 +8,7 @@
  * - Widget Studio (/admin/widget)
  * Supports collapsing with localStorage persistence.
  */
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Button } from './ui'

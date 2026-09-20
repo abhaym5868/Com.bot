@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import NotificationCenter from './NotificationCenter'
 import ThemeSwitcher from './ThemeSwitcher'
 import CommandPalette from './CommandPalette'
-import { Button, Badge, Kbd, Menu, MenuTrigger, MenuPopup, MenuItem, MenuSeparator, Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetBody } from './ui'
+import { Button, Badge, Kbd, Menu, MenuTrigger, MenuPopup, MenuItem, MenuSeparator, Sheet, SheetTrigger, SheetContent, SheetHeader, SheetBody } from './ui'
 import './Navbar.css'
 
 export default function Navbar() {

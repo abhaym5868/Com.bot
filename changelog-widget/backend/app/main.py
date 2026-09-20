@@ -11,13 +11,14 @@ import asyncio
 import os
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config.settings import settings
 from app.config.database import connect_db, close_db, get_database
+from app.middleware.auth import verify_csrf
 from app.routes import health as health_router
 from app.routes import auth as auth_router
 from app.routes import changelog as changelog_router
@@ -78,6 +79,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ─── CSRF Protection Middleware ───────────────────────────────────────────────
+
+@app.middleware("http")
+async def csrf_protection_middleware(request: Request, call_next):
+    try:
+        verify_csrf(request)
+    except HTTPException as exc:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+        )
+    return await call_next(request)
 
 # ─── Global Exception Handler ─────────────────────────────────────────────────
 

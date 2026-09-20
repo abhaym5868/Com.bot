@@ -2,9 +2,10 @@
 middleware/auth.py
 ------------------
 Authentication dependencies, JWT token extraction, cookie helpers,
-and Role-Based Access Control (RBAC) guards.
+CSRF double-submit protection, and Role-Based Access Control (RBAC) guards.
 """
 
+import secrets
 from bson import ObjectId
 from fastapi import Depends, HTTPException, Request, Response, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -21,13 +22,20 @@ from app.utils.jwt import decode_token
 security_bearer = HTTPBearer(auto_error=False)
 
 
+def generate_csrf_token() -> str:
+    """Generate a cryptographically secure random token for CSRF protection."""
+    return secrets.token_urlsafe(32)
+
+
 def set_auth_cookies(
     response: Response,
     access_token: str,
     refresh_token: str,
-) -> None:
+    csrf_token: str | None = None,
+) -> str:
     """
-    Set access_token and refresh_token as secure, httpOnly cookies.
+    Set access_token and refresh_token as secure, httpOnly cookies,
+    and csrf_token as a readable cookie for CSRF double-submit validation.
     """
     # Access token cookie (15 minutes)
     response.set_cookie(
@@ -51,9 +59,22 @@ def set_auth_cookies(
         path="/",
     )
 
+    # CSRF cookie (readable by JavaScript to send via X-CSRF-Token header)
+    token = csrf_token or generate_csrf_token()
+    response.set_cookie(
+        key="csrf_token",
+        value=token,
+        max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
+        httponly=False,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+        path="/",
+    )
+    return token
+
 
 def clear_auth_cookies(response: Response) -> None:
-    """Clear access and refresh cookies upon logout."""
+    """Clear access, refresh, and csrf cookies upon logout."""
     response.delete_cookie(
         key="access_token",
         path="/",
@@ -68,6 +89,55 @@ def clear_auth_cookies(response: Response) -> None:
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
     )
+    response.delete_cookie(
+        key="csrf_token",
+        path="/",
+        httponly=False,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+    )
+
+
+def verify_csrf(request: Request) -> None:
+    """
+    Validate double-submit CSRF token for state-changing requests when
+    authenticated via browser cookies.
+    Exemptions:
+    - Safe methods: GET, HEAD, OPTIONS
+    - Direct API clients using Authorization: Bearer header
+    - Unauthenticated requests where no access_token cookie is present
+    """
+    if request.method in ("GET", "HEAD", "OPTIONS"):
+        return
+
+    # Direct Bearer tokens are exempt from CSRF (they cannot be forged via ambient browser cookies)
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        return
+
+    # Public unauthenticated routes are exempt from CSRF
+    public_paths = (
+        "/api/v1/auth/login",
+        "/api/v1/auth/signup",
+        "/api/v1/auth/refresh",
+        "/api/v1/auth/forgot-password",
+        "/api/v1/auth/reset-password",
+        "/api/v1/auth/verify-email",
+        "/api/v1/analytics/view",
+    )
+    if any(request.url.path.startswith(p) for p in public_paths):
+        return
+
+    # Check if request has an authenticated session cookie
+    if request.cookies.get("access_token"):
+        csrf_cookie = request.cookies.get("csrf_token")
+        csrf_header = request.headers.get("X-CSRF-Token") or request.headers.get("x-csrf-token")
+
+        if not csrf_cookie or not csrf_header or csrf_cookie != csrf_header:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="CSRF token validation failed. Missing or mismatched X-CSRF-Token header.",
+            )
 
 
 def get_token_from_request(
@@ -188,4 +258,3 @@ async def get_optional_current_user(
         return UserModel(**doc)
     except Exception:
         return None
-

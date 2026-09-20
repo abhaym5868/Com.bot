@@ -28,6 +28,19 @@ const CATEGORY_MAP = {
   FIXED: { label: '#Fixed', cls: 'badge-fixed', variant: 'outline' },
 }
 
+const safeUrlTransform = (url) => {
+  if (!url) return ''
+  const trimmed = url.trim().toLowerCase()
+  if (
+    trimmed.startsWith('javascript:') ||
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('vbscript:')
+  ) {
+    return '#'
+  }
+  return url
+}
+
 export default function ChangelogDetailPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
@@ -221,7 +234,20 @@ export default function ChangelogDetailPage() {
       </header>
 
       <div className="markdown-body detail-content">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          urlTransform={safeUrlTransform}
+          components={{
+            a: ({ href, children, ...props }) => {
+              const safeHref = safeUrlTransform(href)
+              return (
+                <a href={safeHref} target="_blank" rel="noopener noreferrer" {...props}>
+                  {children}
+                </a>
+              )
+            },
+          }}
+        >
           {changelog.content_markdown || ''}
         </ReactMarkdown>
       </div>

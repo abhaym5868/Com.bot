@@ -12,12 +12,15 @@ from app.config.settings import settings
 from app.config.database import get_database
 from app.middleware.auth import (
     clear_auth_cookies,
+    generate_csrf_token,
     get_current_admin_user,
     get_current_user,
     set_auth_cookies,
 )
 from app.models.user import UserModel
 from app.schemas.auth import (
+    AuthResponse,
+    CsrfResponse,
     ForgotPasswordRequest,
     ForgotPasswordResponse,
     LoginRequest,
@@ -36,7 +39,7 @@ router = APIRouter()
 
 @router.post(
     "/signup",
-    response_model=TokenResponse,
+    response_model=AuthResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user",
     description="Registers a new user, hashes password, generates email verification simulation token, and sets httpOnly auth cookies.",
@@ -53,17 +56,14 @@ async def signup(
         db, LoginRequest(email=data.email, password=data.password)
     )
 
-    # Set httpOnly cookies
+    # Set httpOnly cookies (access_token, refresh_token) and csrf_token cookie
     set_auth_cookies(response, access_token, refresh_token)
 
     # Include verification token in header ONLY in development for simulation / testing
     if settings.environment.lower() == "development":
         response.headers["X-Email-Verification-Token"] = verification_token
 
-    return TokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="bearer",
+    return AuthResponse(
         user=UserResponse.model_validate(user.model_dump()),
     )
 
@@ -84,8 +84,8 @@ async def verify_email(
 
 @router.post(
     "/login",
-    response_model=TokenResponse,
-    summary="Authenticate and receive access + refresh tokens",
+    response_model=AuthResponse,
+    summary="Authenticate and receive access + refresh cookies",
     description="Authenticates credentials, sets httpOnly cookies (15m access, 7d refresh), and returns user profile.",
 )
 async def login(
@@ -96,19 +96,16 @@ async def login(
     user, access_token, refresh_token = await auth_service.login_user(db, data)
     set_auth_cookies(response, access_token, refresh_token)
 
-    return TokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="bearer",
+    return AuthResponse(
         user=UserResponse.model_validate(user.model_dump()),
     )
 
 
 @router.post(
     "/refresh",
-    response_model=TokenResponse,
+    response_model=AuthResponse,
     summary="Refresh access token with token rotation",
-    description="Reads refresh token from httpOnly cookie (or request body), revokes it, and issues a fresh token pair.",
+    description="Reads refresh token from httpOnly cookie (or request body), revokes it, and issues a fresh token pair in httpOnly cookies.",
 )
 async def refresh_token_endpoint(
     request: Request,
@@ -129,12 +126,30 @@ async def refresh_token_endpoint(
     user, new_access, new_refresh = await auth_service.refresh_tokens(db, token_str)
     set_auth_cookies(response, new_access, new_refresh)
 
-    return TokenResponse(
-        access_token=new_access,
-        refresh_token=new_refresh,
-        token_type="bearer",
+    return AuthResponse(
         user=UserResponse.model_validate(user.model_dump()),
     )
+
+
+@router.get(
+    "/csrf",
+    response_model=CsrfResponse,
+    summary="Get or refresh CSRF token",
+    description="Returns a CSRF token and sets the csrf_token cookie for double-submit CSRF protection.",
+)
+async def get_csrf_token(request: Request, response: Response):
+    existing_csrf = request.cookies.get("csrf_token")
+    token = existing_csrf or generate_csrf_token()
+    response.set_cookie(
+        key="csrf_token",
+        value=token,
+        max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
+        httponly=False,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+        path="/",
+    )
+    return CsrfResponse(csrf_token=token)
 
 
 @router.post(
@@ -170,7 +185,7 @@ async def forgot_password(
     token = await auth_service.request_password_reset(db, data.email)
     simulation_token = token if settings.environment.lower() == "development" else None
     return ForgotPasswordResponse(
-        message="If this email is registered, password reset instructions have been dispatched.",
+        message="If the account exists, password reset instructions have been sent.",
         simulation_token=simulation_token,
     )
 
