@@ -32,7 +32,11 @@ export default function AnalyticsDashboardPage() {
       setStats(dashData)
       setPerformance(perfData || [])
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Failed to load analytics data.')
+      if (err?.response?.status === 401) {
+        setError('Your session has expired. Please sign in again.')
+      } else {
+        setError(err?.response?.data?.detail || 'Failed to load analytics data.')
+      }
     } finally {
       setLoading(false)
     }
@@ -60,8 +64,13 @@ export default function AnalyticsDashboardPage() {
         </div>
 
         {error && (
-          <div className="alert alert-error" style={{ marginBottom: '20px' }}>
-            {error}
+          <div className="alert alert-error" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>⚠️ {error}</span>
+            {(error.includes('expired') || error.includes('sign in') || error.includes('log in')) && (
+              <Link to="/login" className="btn btn-sm btn-primary" style={{ textDecoration: 'none', marginLeft: '12px' }}>
+                Sign In
+              </Link>
+            )}
           </div>
         )}
 

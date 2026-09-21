@@ -10,11 +10,12 @@
 
 import axios from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+// In development with Vite proxy, use relative path so cookies are same-origin on localhost
+const BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || '')
 
 const api = axios.create({
   baseURL: BASE_URL,
-  withCredentials: true,   // Send httpOnly cookies on cross-origin requests
+  withCredentials: true,   // Send httpOnly cookies
   headers: {
     'Content-Type': 'application/json',
   },
@@ -63,12 +64,18 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    // Skip refresh for auth endpoints themselves to avoid loops
-    const isAuthEndpoint = originalRequest?.url?.includes('/api/v1/auth/')
+    // Skip refresh for auth endpoints that cannot be refreshed or would loop
+    const url = originalRequest?.url || ''
+    const isAuthLoopEndpoint =
+      url.includes('/api/v1/auth/refresh') ||
+      url.includes('/api/v1/auth/login') ||
+      url.includes('/api/v1/auth/logout') ||
+      url.includes('/api/v1/auth/signup')
+
     if (
       error.response?.status === 401 &&
       !originalRequest._retried &&
-      !isAuthEndpoint
+      !isAuthLoopEndpoint
     ) {
       if (_refreshing) {
         // Queue request while refresh is in-flight
@@ -89,6 +96,10 @@ api.interceptors.response.use(
         return api(originalRequest)
       } catch (refreshError) {
         processQueue(refreshError)
+        // If refresh fails with 401, session has expired -> dispatch event
+        if (typeof window !== 'undefined' && refreshError.response?.status === 401) {
+          window.dispatchEvent(new CustomEvent('auth:session-expired'))
+        }
         return Promise.reject(refreshError)
       } finally {
         _refreshing = false

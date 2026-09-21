@@ -51,7 +51,11 @@ export default function AdminDashboardPage() {
       setTotal(data.total || 0)
       setPages(data.pages || 1)
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Failed to load changelogs.')
+      if (err?.response?.status === 401) {
+        setError('Your session has expired. Please sign in again.')
+      } else {
+        setError(err?.response?.data?.detail || 'Failed to load changelogs.')
+      }
     } finally {
       setLoading(false)
     }
@@ -357,11 +361,19 @@ export default function AdminDashboardPage() {
           ) : error ? (
             <div className="admin-empty-state">
               <span className="empty-icon">⚠️</span>
-              <h3 style={{ color: 'var(--color-danger)' }}>Failed to load</h3>
+              <h3 style={{ color: 'var(--color-danger)' }}>
+                {error.includes('session has expired') ? 'Session Expired' : 'Failed to load'}
+              </h3>
               <p style={{ color: 'var(--color-text-muted)', marginBottom: '16px', fontSize: '13px' }}>{error}</p>
-              <Button variant="secondary" size="sm" onClick={fetchChangelogs}>
-                Retry
-              </Button>
+              {error.includes('session has expired') ? (
+                <Link to="/login" className="btn btn-primary btn-sm">
+                  Sign In
+                </Link>
+              ) : (
+                <Button variant="secondary" size="sm" onClick={fetchChangelogs}>
+                  Retry
+                </Button>
+              )}
             </div>
           ) : changelogs.length === 0 ? (
             <div className="admin-empty-state">

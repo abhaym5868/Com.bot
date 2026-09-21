@@ -7,6 +7,7 @@
  * - Paginated table with formatted timestamps and action badges
  */
 import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import AdminSidebar from '../components/AdminSidebar'
 import auditService from '../services/auditService'
 import { Card, Badge, Button } from '../components/ui'
@@ -29,7 +30,11 @@ export default function ActivityLogPage() {
       setTotal(data.total || 0)
       setPages(data.pages || 1)
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Failed to load activity logs.')
+      if (err?.response?.status === 401) {
+        setError('Your session has expired. Please sign in again.')
+      } else {
+        setError(err?.response?.data?.detail || 'Failed to load activity logs.')
+      }
     } finally {
       setLoading(false)
     }
@@ -67,8 +72,13 @@ export default function ActivityLogPage() {
         </div>
 
         {error && (
-          <div className="alert alert-error" style={{ marginBottom: '20px' }}>
-            {error}
+          <div className="alert alert-error" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>⚠️ {error}</span>
+            {(error.includes('expired') || error.includes('sign in') || error.includes('log in')) && (
+              <Link to="/login" className="btn btn-sm btn-primary" style={{ textDecoration: 'none', marginLeft: '12px' }}>
+                Sign In
+              </Link>
+            )}
           </div>
         )}
 
